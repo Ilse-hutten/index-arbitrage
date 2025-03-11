@@ -25,7 +25,15 @@ def string_check(string):
         return False
 
 
-def API_call(symbol, frequency='Time Series (Daily)'):
+def API_call(symbol, frequency='Time Series (Daily)', subfolder=''):
+
+    cwd=os.getcwd()
+    print(cwd)
+
+    # os.chdir("..")
+    cwd=os.getcwd() + '/data/'
+
+    print(cwd)
 
     test_symbol = symbol
 
@@ -56,7 +64,7 @@ def API_call(symbol, frequency='Time Series (Daily)'):
         else :
             storing_name=test_symbol
 
-        df.to_csv(storing_name+'.csv')
+        df.to_csv(cwd + subfolder + storing_name+'.csv')
 
         print(f'TIME_SERIES_DAILY of ticker {test_symbol} stored under {storing_name}.csv')
         return True
