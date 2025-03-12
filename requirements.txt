@@ -1,7 +1,6 @@
 requests
 pandas
 numpy
-json
-re
 tensorflow
-sklearn
+scikit-learn
+google-cloud-storage
