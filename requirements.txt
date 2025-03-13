@@ -1,6 +1,4 @@
 requests
-#json
-#re
 tensorflow
 pytest
 pylint
@@ -11,3 +9,4 @@ pandas
 matplotlib
 seaborn
 scikit-learn
+google-cloud-storage
