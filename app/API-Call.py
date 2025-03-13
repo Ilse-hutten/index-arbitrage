@@ -33,7 +33,15 @@ def API_call(symbol, frequency='Time Series (Daily)', subfolder=''):
     # os.chdir("..")
     cwd=os.getcwd() + '/data/'
 
-    print(cwd)
+    # Check whether the specified path exists or not
+    isExist = os.path.exists(cwd)
+
+    if isExist==False:
+        print(f'{cwd} does not exist yet.')
+        print(f'creating {cwd}')
+        os.makedirs(cwd)
+
+    print(f'Attempting to store API output in {cwd}')
 
     test_symbol = symbol
 
@@ -75,5 +83,3 @@ def API_call(symbol, frequency='Time Series (Daily)', subfolder=''):
         print('Abandoning API Call - Please try again')
 
         return False
-
-API_call('IBM')
