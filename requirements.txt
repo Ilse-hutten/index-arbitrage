@@ -1,7 +1,7 @@
 requests
 pandas
 numpy
-json
-re
+# json
+# re
 tensorflow
-sklearn
+scikit-learn
