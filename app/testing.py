@@ -4,57 +4,73 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import seaborn as sns
 from google.cloud import bigquery
-from google.colab import files
 import os
 
-uploaded = files.upload()  # Manually upload the JSON key file
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GCPCredentials
+def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, dynamic=False):
 
-client = bigquery.Client()
+    stock_aligned = pca_weights_df[['date']].merge(underlying_df, on='date')
+    weight_aligned = stock_aligned[["date"]].merge(pca_weights_df,on="date")
+    weight_aligned.set_index("date",inplace=True)
+    stock_aligned.set_index("date",inplace=True)
 
-# Set your GCP project details
-project_id = PROJECTID
+    for name in stock_aligned.columns:
+        if name not in weight_aligned.columns:
+            stock_aligned.drop(name,axis=1,inplace=True)
 
-#SUGGESTION need to make this flexible
-dataset_id = "FTSE_100_main"  # Replace with your dataset name
-table_name = "FTSE100_csv"
+    target_df.index = pd.to_datetime(target_df.index)
+    investment_aligned=weight_aligned.join(target_df)
 
-# Construct full table path
-table_id = f"{project_id}.{dataset_id}.{table_name}"
+    replication_aligned = weight_aligned.mul(investment_aligned['FTSE price'], axis=0)
+    replication_aligned.sum(axis=1)
 
-#query BigQuery
-query = f"SELECT * FROM `{table_id}` ORDER BY Unnamed_0 ASC"
+    weight_position = replication_aligned/stock_aligned
 
-target_df = client.query(query).to_dataframe()
+    #Calculating replication portfolio for cal_days+trade_days days based on Date PCA
+    #
+    replications_df=pd.DataFrame(columns=range(cal_days+trade_days), dtype=float)
 
-target_df.rename(columns={'Unnamed_0': 'Date',"close": "FTSE price"}, inplace=True)
-target_df.set_index('Date', inplace=True)
-target_close_price_df = pd.DataFrame(FTSE100["FTSE price"])
+    for i,r in weight_position.reset_index().iterrows():
+        if i>cal_days:
+            try_1 = r * stock_aligned[i-cal_days:min(i+trade_days, len(weight_position))]
+            replication_index=pd.DataFrame(try_1.sum(axis=1).reset_index(drop=True))
+            replications_df=pd.concat([replications_df,replication_index.T], axis=0)
 
-#reading statistical analysis output
-daily_weight = pd.read_csv("daily_weights.csv")
+    replications_df.index=weight_position.index[cal_days:-trading_length]
+    replications_df.columns=[f'Day {i-cal_days+1}' for i in range(cal_days+trade_days)]
+    replications_df=replications_df.astype(float)
 
-#removing .L ending for London denoted stocks
-daily_weight = daily_weight.rename(columns = lambda x : str(x)[:-2])
-daily_weight = daily_weight.rename(columns={'Da': 'date'})
-daily_weight["date"] = pd.to_datetime(daily_weight["date"])
+    #Calculating target for cal_days+trade_days days from Date
+    target_match_df=pd.DataFrame(columns=range(cal_days+trade_days))
 
-#setting the data onto a single dataframe for frequency and date and stock match
-stock_aligned = daily_weight[["date"]].merge(stock_price,on="date")
-weight_aligned = stock_aligned[["date"]].merge(daily_weight,on="date")
-weight_aligned.set_index("date",inplace=True)
-stock_aligned.set_index("date",inplace=True)
+    for i,r in weight_position.reset_index().iterrows():
+        if i > cal_days:
+            target_match=pd.DataFrame(target_df.iloc[i-cal_days:min(i+trade_days, len(weight_position))].reset_index(drop=True))
+            target_match_df=pd.concat([target_match_df,target_match.T], axis=0)
 
-for name in stock_aligned.columns:
-  if name not in weight_aligned.columns:
-    stock_aligned.drop(name,axis=1,inplace=True)
+    target_log_returns=np.log(target_match_df/target_match_df.shift(1, axis=1))
+    replications_log_returns=np.log(replications_df/replications_df.shift(1, axis=1))
 
-    #dropping BTA from the stock index dataframe
-    weight_aligned = weight_aligned.drop("BT-A", axis=1)
+    spread_df=target_log_returns-replications_log_returns
+    spread_mean=spread_df.iloc[:,:cal_days].mean(axis=1)
+    spread_vol=spread_df.iloc[:,:cal_days].std(axis=1)
 
-    #test that the shapes are the same between the weight and the stock dataframe
+    z_scores_df=pd.DataFrame((spread_df.iloc[:,cal_days]-spread_mean)/spread_vol, columns=['z_score'])
 
-#converting
-target_close_price_df.index = pd.to_datetime(target_close_price_df.index)
+    pos_low_threshold=0.5
+    pos_high_threshold=2
+    neg_low_threshold=-2
+    neg_high_threshold=-0.5
 
+    for i, r in z_scores_df.iterrows():
+        if r['z_score'] > pos_low_threshold:
+            if r['z_score'] <pos_high_threshold:
+                z_scores_df.loc[i, 'direction']=-1
+            else:
+                z_scores_df.loc[i,'direction']=0
+        elif r['z_score'] > neg_low_threshold:
+            if r['z_score']<neg_high_threshold:
+                z_scores_df.loc[i, 'direction']=1
+            else: z_scores_df.loc[i, 'direction']=0
+
+    return z_scores_df
