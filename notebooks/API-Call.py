@@ -76,4 +76,5 @@ def API_call(symbol, frequency='Time Series (Daily)', subfolder=''):
 
         return False
 
-API_call('IBM')
+API_call('BTC')
+
