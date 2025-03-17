@@ -47,7 +47,7 @@ class Frame:
         else:
             print("No valid CSV files found.")
         print('Started prepocessing....')
-        merged_df['date'] = pd.to_datetime(merged_df['date'],format='mixed')
+        merged_df['date'] = pd.to_datetime(merged_df['date'],format='%Y-%m-%d')
 
         df_modified = merged_df[['date', 'source_file', 'close']].copy()
         df_modified['source_file'] = df_modified['source_file'].str.split('/').str[-1].str.replace('.csv', '')
@@ -55,9 +55,8 @@ class Frame:
         df_pivoted.reset_index(inplace=True)
 
         df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
-        #dropping as nan are less than 5 for approx. five stocks and 1 stock is  117 nan
-        df_latest.dropna(inplace=True)
-        # df_numeric = df_latest.drop(columns=['date'])
+        df_latest.drop(columns=['HLN'],inplace=True)
+        df_latest.fillna(method='ffill', inplace=True)
         print('Completed prepocessing.')
         return df_latest
 
