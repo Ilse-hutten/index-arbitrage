@@ -5,3 +5,11 @@ numpy
 # re
 tensorflow
 scikit-learn
+
+
+###
+google-cloud-bigquery
+google-auth
+pandas-gbq
+db-dtypes
+google-cloud-bigquery-storage
