@@ -2,10 +2,10 @@ import os
 from google.cloud import bigquery
 
 # Path to your BigQuery JSON key file
-json_key_path = "big_query_key.json"
+#json_key_path = "big_query_key.json"
 
 # Set environment variable for authentication
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
 
 
 def fetch_NASDAQ100_index():
@@ -109,3 +109,5 @@ def fetch_ftse100_all_components():
     df = query_job.to_dataframe()
 
     return df  # Return the DataFrame
+
+print(fetch_NASDAQ100_all_components())
