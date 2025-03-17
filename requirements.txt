@@ -1,29 +1,17 @@
 requests
-<<<<<<< HEAD
 pandas
 numpy
-# json
-# re
 tensorflow
 scikit-learn
-
-
-###
 google-cloud-bigquery
 google-auth
 pandas-gbq
 db-dtypes
 google-cloud-bigquery-storage
-=======
-tensorflow
 pytest
 pylint
 ipdb
 jupyterlab
-numpy
-pandas
 matplotlib
 seaborn
-scikit-learn
 google-cloud-storage
->>>>>>> 283367f7e6bb27ede98e53aab8f16af136b254ed
