@@ -47,7 +47,7 @@ class Frame:
         else:
             print("No valid CSV files found.")
         print('Started prepocessing....')
-        merged_df['date'] = pd.to_datetime(merged_df['date'],format='mixed')
+        merged_df['date'] = pd.to_datetime(merged_df['date'],format='%Y-%m-%d')
 
         df_modified = merged_df[['date', 'source_file', 'close']].copy()
         df_modified['source_file'] = df_modified['source_file'].str.split('/').str[-1].str.replace('.csv', '')
