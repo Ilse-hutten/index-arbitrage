@@ -83,3 +83,9 @@ def API_call(symbol, frequency='Time Series (Daily)', subfolder=''):
         print('Abandoning API Call - Please try again')
 
         return False
+<<<<<<< HEAD:app/API-Call.py
+=======
+
+API_call('BTC')
+
+>>>>>>> b30d145ea2d7e0ae5c2a92482fca5f3fe8b32d26:notebooks/API-Call.py
