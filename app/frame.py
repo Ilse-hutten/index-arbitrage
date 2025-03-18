@@ -68,6 +68,3 @@ class Frame:
         # df_numeric = df_latest.drop(columns=['date'])
         print('Completed prepocessing.')
         return df_latest
-
-data=Frame()
-data.dataset()

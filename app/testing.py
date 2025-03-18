@@ -17,12 +17,19 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     weight_aligned.set_index("date",inplace=True)
     stock_aligned.set_index("date",inplace=True)
 
+    breakpoint()
+
     for name in stock_aligned.columns:
         if name not in weight_aligned.columns:
             stock_aligned.drop(name,axis=1,inplace=True)
 
+    breakpoint()
+
     #target_df.index = pd.to_datetime(target_df.index)
+    
     investment_aligned=weight_aligned.join(target_df)
+    #
+    #modify for target name!!!
     target_df = investment_aligned['FTSE price']
 
     #need to make this flexible here!! FTSE price
@@ -34,8 +41,13 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     # #
     replications_df=pd.DataFrame(columns=range(cal_days+trade_days), dtype=float)
 
+    breakpoint()
+
     for i,r in weight_position.reset_index().iterrows():
         if i>cal_days:
+            print(r)
+            print(stock_aligned[i-cal_days-1:min(i+trade_days-1, len(weight_position))])
+            breakpoint()
             try_1 = r * stock_aligned[i-cal_days-1:min(i+trade_days-1, len(weight_position))]
             replication_index=pd.DataFrame(try_1.sum(axis=1).reset_index(drop=True))
             replications_df=pd.concat([replications_df,replication_index.T], axis=0)
@@ -58,6 +70,7 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
 
     #log_return calculation of the target and replication
     #
+    breakpoint()
     target_log_returns=np.log(target_match_df/target_match_df.shift(1, axis=1))
     replications_log_returns=np.log(replications_df/replications_df.shift(1, axis=1))
 
@@ -89,8 +102,6 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
                 z_scores_df.loc[i, 'direction']=1
             else: z_scores_df.loc[i, 'direction']=0
 
-    print(z_scores_df)
-
     #spread from today to the end
     #
     spread_df=pd.DataFrame(target_log_returns.iloc[:,cal_days+1:].values-replications_log_returns.iloc[:,cal_days+1:].values, index=target_log_returns.index)
@@ -104,10 +115,25 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
 
     print(z_scores_df)
 
-    exit_day=trade_days-1
 
     for start_date, row in z_scores_df.iterrows():
         test_date=pd.to_datetime(start_date).strftime('%Y-%m-%d')
+        #
+        #default setting to maximum trade days
+        exit_day=trade_days-1
+
+        #if the setting is dynamic looping through the z scores to identify when the position would have been closed
+        if dynamic:
+            if row['direction']==1:
+                for day in range(1, trade_days-1):
+                    if row[f'Trading Day {day}'] > exit_threshold:
+                        exit_day=day
+                        break
+            if row['direction']==-1:
+                for day in range(1, trade_days-1):
+                    if row[f'Trading Day {day}'] < exit_threshold:
+                        exit_day=day
+                        break
         z_scores_df.loc[test_date, 'replication exit']=replications_df.loc[test_date, f'Trading Day {exit_day}']
         z_scores_df.loc[test_date, 'target exit']=target_match_df.loc[test_date, f'Trading Day {exit_day}']
 
