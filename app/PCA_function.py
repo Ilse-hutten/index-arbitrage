@@ -1,4 +1,3 @@
-
 def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
     Compute PCA-based portfolio weights for a specific date.
@@ -15,10 +14,10 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
 
     # Initialize
-    dates = X_log.index[window:]
+    dates = X_log.index[window_pca:]
     summed_pcs_full = {}
     breakpoint()
-    
+
     # Rolling PCA computation
     def compute_rolling_pca(window_start):
         pca_roll = PCA()
@@ -51,13 +50,11 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     return rep_pf
 
 
-# # Define input variables
+# Define input variables
 # n_stocks = 30
 # window_pca = 100 # number of days the PCA weights are calculated over
 # n_pcs = 3
 # pca_date = '2023-06-16'
 
-# # Get weights
+# Get weights
 # rep_pf = rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date)
-
-# print(rep_pf)
