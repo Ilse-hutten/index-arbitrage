@@ -20,7 +20,11 @@ class Frame:
                         '5. volume': 'volume'
                     }
         expected_columns = list(rename_dict.values())
+
+        #SUGGESTION Folder prefix should be made flexible eventually
         folder_prefix = "FTSE_100/"
+
+
         blobs = bucket.list_blobs(prefix=folder_prefix)
         dataframes = []
 
@@ -47,7 +51,7 @@ class Frame:
         else:
             print("No valid CSV files found.")
         print('Started prepocessing....')
-        merged_df['date'] = pd.to_datetime(merged_df['date'],format='mixed')
+        merged_df['date'] = pd.to_datetime(merged_df['date'],format='%Y-%m-%d')
 
         df_modified = merged_df[['date', 'source_file', 'close']].copy()
         df_modified['source_file'] = df_modified['source_file'].str.split('/').str[-1].str.replace('.csv', '')
