@@ -20,7 +20,11 @@ class Frame:
                         '5. volume': 'volume'
                     }
         expected_columns = list(rename_dict.values())
+
+        #SUGGESTION Folder prefix should be made flexible eventually
         folder_prefix = "FTSE_100/"
+
+
         blobs = bucket.list_blobs(prefix=folder_prefix)
         dataframes = []
 
@@ -54,6 +58,7 @@ class Frame:
         df_pivoted = df_modified.pivot_table(index='date', columns='source_file', values='close')
         df_pivoted.reset_index(inplace=True)
 
+        #SUGGESTION should make time frame flexible eventually
         df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
         df_latest.drop(columns=['HLN'],inplace=True)
         df_latest.fillna(method='ffill', inplace=True)
