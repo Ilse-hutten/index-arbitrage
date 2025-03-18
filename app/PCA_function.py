@@ -1,3 +1,8 @@
+import pandas as pd
+from sklearn.decomposition import PCA
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
 def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
@@ -15,7 +20,7 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
 
     # Initialize
-    dates = X_log.index[window:]
+    dates = X_log.index[window_pca:]
     summed_pcs_full = {}
 
     # Rolling PCA computation
@@ -58,5 +63,3 @@ pca_date = '2023-06-16'
 
 # Get weights
 rep_pf = rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date)
-
-print(rep_pf)
