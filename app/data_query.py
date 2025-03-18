@@ -35,13 +35,3 @@ def fetch_ftse100_index():
 def fetch_ftse100_all_components():
     return fetch_data("FTSE100", "FTSE100_all_components")
 
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame

@@ -18,6 +18,3 @@ def preprocessing_X(stocks_df):
     scaler.fit(X_log)
     X_log = pd.DataFrame(scaler.transform(X_log), columns=stock_log_features, index=log_returns.index)
     return X_log
-
-df= preprocessing_X()
-print(df)

@@ -61,8 +61,4 @@ class Frame:
         # df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
         df_pivoted.fillna(method='ffill', inplace=True)
         print('Completed prepocessing.')
-<<<<<<< HEAD
-        return df_latest
-=======
         return df_pivoted
->>>>>>> 8cc847859cb5869f40e47d54b507f70e7f9aa3a1

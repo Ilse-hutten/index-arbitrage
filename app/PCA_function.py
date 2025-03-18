@@ -1,3 +1,6 @@
+from sklearn.decomposition import PCA
+import pandas as pd
+
 def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
     Compute PCA-based portfolio weights for a specific date.
@@ -16,7 +19,6 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     # Initialize
     dates = X_log.index[window_pca:]
     summed_pcs_full = {}
-    breakpoint()
 
     # Rolling PCA computation
     def compute_rolling_pca(window_start):
@@ -36,13 +38,14 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     summed_pcs_full_df.index.name = "Date"
 
     # Check if requested date is available
-    if pd.to_datetime(pca_date) not in summed_pcs_full_df.index:
-        raise ValueError(f"The date {pca_date} is not available in the data.")
+    # if pca_date not in summed_pcs_full_df.index:
+    #     raise ValueError(f"The date {pca_date} is not available in the data.")
 
     # Calculate weights for the specified date
-    daily_values = summed_pcs_full_df.loc[pd.to_datetime(pca_date)]
-    top_stocks = daily_values.nlargest(n_stocks)
-    portfolio_weights = top_stocks / top_stocks.sum()
+    for i, row in summed_pcs_full
+        daily_values =row
+        top_stocks = daily_values.nlargest(n_stocks)
+        portfolio_weights = top_stocks / top_stocks.sum()
 
     # Create a one-row DataFrame with stocks as columns and weights as the values
     rep_pf = pd.DataFrame([portfolio_weights.values], columns=portfolio_weights.index)

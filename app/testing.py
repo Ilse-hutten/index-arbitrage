@@ -17,13 +17,9 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     weight_aligned.set_index("date",inplace=True)
     stock_aligned.set_index("date",inplace=True)
 
-    breakpoint()
-
     for name in stock_aligned.columns:
         if name not in weight_aligned.columns:
             stock_aligned.drop(name,axis=1,inplace=True)
-
-    breakpoint()
 
     #target_df.index = pd.to_datetime(target_df.index)
 
@@ -41,13 +37,8 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     # #
     replications_df=pd.DataFrame(columns=range(cal_days+trade_days), dtype=float)
 
-    breakpoint()
-
     for i,r in weight_position.reset_index().iterrows():
         if i>cal_days:
-            print(r)
-            print(stock_aligned[i-cal_days-1:min(i+trade_days-1, len(weight_position))])
-            breakpoint()
             try_1 = r * stock_aligned[i-cal_days-1:min(i+trade_days-1, len(weight_position))]
             replication_index=pd.DataFrame(try_1.sum(axis=1).reset_index(drop=True))
             replications_df=pd.concat([replications_df,replication_index.T], axis=0)
@@ -70,7 +61,6 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
 
     #log_return calculation of the target and replication
     #
-    breakpoint()
     target_log_returns=np.log(target_match_df/target_match_df.shift(1, axis=1))
     replications_log_returns=np.log(replications_df/replications_df.shift(1, axis=1))
 
