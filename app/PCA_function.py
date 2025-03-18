@@ -1,16 +1,19 @@
 from sklearn.decomposition import PCA
 import pandas as pd
+from datetime import datetime, timedelta
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
 
-def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
+def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs):
     """
     Compute PCA-based portfolio weights for a specific date.
 
     Parameters:
     - X_log: DataFrame of log returns
     - n_stocks: Number of top stocks to select each window
-    - window: Number of trading days per rolling window
+    - window_pca: Number of days the pca is calculated over
     - n_pcs: Number of principal components to sum
-    - pca_date: Date (as string or Timestamp) to compute weights for
 
     Returns:
     - rep_pf: DataFrame with stocks as columns and weights as the values
@@ -23,13 +26,13 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     # Rolling PCA computation
     def compute_rolling_pca(window_start):
         pca_roll = PCA()
-        window_data = X_log.iloc[window_start:window_start + window_pca - 1, :]
+        window_data = X_log.iloc[window_start:window_start + window_pca, :]  # Full rolling window
         pca_roll.fit(window_data)
         loadings_matrix = pca_roll.components_.T
         summed_values = loadings_matrix[:, :n_pcs].sum(axis=1)
         summed_pcs_full[dates[window_start]] = pd.Series(summed_values, index=X_log.columns)
 
-    # Run rolling PCA
+    # Run rolling PCA for all windows
     for start in range(len(X_log) - window_pca):
         compute_rolling_pca(start)
 
@@ -37,27 +40,28 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     summed_pcs_full_df = pd.DataFrame(summed_pcs_full).T
     summed_pcs_full_df.index.name = "Date"
 
-    # Check if requested date is available
-    # if pca_date not in summed_pcs_full_df.index:
-    #     raise ValueError(f"The date {pca_date} is not available in the data.")
+    # Initialize daily weights list
+    daily_weights = []
 
-    # Calculate weights for the specified date
-    for i, row in summed_pcs_full
-        daily_values =row
+    # Calculate weights for each date
+    for date in summed_pcs_full_df.index:
+        # Get summed PCs for all stocks for date
+        daily_values = summed_pcs_full_df.loc[date]
+
+        # Select the top X stocks for this date
         top_stocks = daily_values.nlargest(n_stocks)
+
+        # Calculate stock weights
         portfolio_weights = top_stocks / top_stocks.sum()
 
-    # Create a one-row DataFrame with stocks as columns and weights as the values
-    rep_pf = pd.DataFrame([portfolio_weights.values], columns=portfolio_weights.index)
+        # Create a row of weights with 0 for stocks not in the top X
+        row_weights = pd.Series(0.0, index=summed_pcs_full_df.columns)  # Initialize with zeros
+        row_weights[top_stocks.index] = portfolio_weights  # Update weights for the top stocks
 
-    return rep_pf
+        # Add the row of weights to the daily weights list
+        daily_weights.append(row_weights)
 
+    # Combine daily weights into a DataFrame
+    daily_weights_df = pd.DataFrame(daily_weights, index=summed_pcs_full_df.index)
 
-# Define input variables
-# n_stocks = 30
-# window_pca = 100 # number of days the PCA weights are calculated over
-# n_pcs = 3
-# pca_date = '2023-06-16'
-
-# Get weights
-# rep_pf = rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date)
+    return daily_weights_df

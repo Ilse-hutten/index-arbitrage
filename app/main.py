@@ -36,25 +36,31 @@ processed_df=preprocessing_X(underlying_df)
 #-----PCA function
 #
 # Define input variables
-X_log=processed_df
+X_log=underlying_df
 n_stocks = 30               # number of stocks used for the replication
-window = 30                 # period the PCA gets calibrated on
-n_pcs = 3                   # number of eigenvectors (should be 3-60)
-pca_date = '2022-02-02'     # date on which the PCA is run
+window = 30                 # period the trading strat goes
+n_pcs = 3                   # number of eigenvectors
+pca_date = '2023-06-16'     # date on which the PCA is run
 #
 # Get weights
+breakpoint()
+
 rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
+
+breakpoint()
+#
 #
 #------Regression signal placeholder
-#
+
 # -----z-score trading simulation
 #
-pca_weights_df=rep_pf
-underlying_df=processed_df
+pca_weights_df=daily_weight
+underlying_df=stock_price
+target_df=target_close_price
 cal_days=60                 # number of days for the z score
 trade_days=30               # maximum number of trading days
 thresholds=[0.5,2,-0.5,-2]  # thresholds for trading signals
-#
-#calling the trading simulation
+
+#calling the simulation
 bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 bt_result.to_csv(cwd + "/data/backtesting.csv")
