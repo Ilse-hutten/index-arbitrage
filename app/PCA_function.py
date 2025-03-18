@@ -1,10 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[34]:
-
-
-def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
+def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date):
     """
     Compute PCA-based portfolio weights for a specific date.
 
@@ -26,14 +21,14 @@ def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
     # Rolling PCA computation
     def compute_rolling_pca(window_start):
         pca_roll = PCA()
-        window_data = X_log.iloc[window_start:window_start + window - 1, :]
+        window_data = X_log.iloc[window_start:window_start + window_pca - 1, :]
         pca_roll.fit(window_data)
         loadings_matrix = pca_roll.components_.T
         summed_values = loadings_matrix[:, :n_pcs].sum(axis=1)
         summed_pcs_full[dates[window_start]] = pd.Series(summed_values, index=X_log.columns)
 
     # Run rolling PCA
-    for start in range(len(X_log) - window):
+    for start in range(len(X_log) - window_pca):
         compute_rolling_pca(start)
 
     # Combine all summed PCs into DataFrame
@@ -55,22 +50,13 @@ def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
     return rep_pf
 
 
-# In[35]:
-
-
 # Define input variables
 n_stocks = 30
-window = 30 # period the trading strat goes
+window_pca = 100 # number of days the PCA weights are calculated over
 n_pcs = 3
 pca_date = '2023-06-16'
-z_window=60 # to calc z score
 
 # Get weights
-rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
+rep_pf = rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs, pca_date)
 
-
-# In[36]:
-
-
-rep_pf
-
+print(rep_pf)
