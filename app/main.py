@@ -4,49 +4,55 @@ from frame import Frame
 from testing import z_score_trading
 from google.cloud import storage
 from google.cloud import bigquery
-
-data=Frame()
-stock_price=data.dataset()
+from data_query import fetch_NASDAQ100_index
+from data_query import fetch_NASDAQ100_all_components
+from data_query import fetch_SP500_index
+from data_query import fetch_SP500_all_components
+from data_query import fetch_ftse100_index
+from data_query import fetch_ftse100_all_components
+from PCA_function import rolling_pca_weights
+from PCA_function import preprocessing
 #
-# #importing FTSE 100 data from Google cloud
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../data/" + 'lewagon-statistical-arbitrage-ae470f7dcd48.json'
-client = storage.Client()
-bucket = client.get_bucket('stat_arb')
-# #
-# Set your GCP project details
-project_id = "lewagon-statistical-arbitrage"
-dataset_id = "FTSE_100_main"  # Replace with your dataset name
-table_name = "FTSE100_csv"
-
-# Construct full table path
-table_id = f"{project_id}.{dataset_id}.{table_name}"
-query = "SELECT * FROM `lewagon-statistical-arbitrage.FTSE_100_main.FTSE100_csv` ORDER BY Unnamed_0 ASC"
-client = bigquery.Client(project=project_id)
-target = client.query(query).to_dataframe()
-
-target.rename(columns={'Unnamed_0': 'Date',"close": "FTSE price"}, inplace=True)
-target.set_index('Date', inplace=True)
-target_close_price = pd.DataFrame(target["FTSE price"])
-
-# #PCA function
-
-# Specifically for FTSE data!!! Needs to be adjusted for other dataframes
+#-----Pulling data from Big Query
 #
-os.chdir('..')
-cwd=os.getcwd()
+index_selected= 'nasdaq'
 
-daily_weight = pd.read_csv(cwd + "/data/daily_weights.csv")
-#daily_weight = daily_weight.rename(columns = lambda x : str(x)[:-2])
-daily_weight = daily_weight.rename(columns={'Date': 'date'})
-daily_weight["date"] = pd.to_datetime(daily_weight["date"])
+if index_selected== "nasdaq":
+    target_df=fetch_NASDAQ100_index()
+    components_df=fetch_NASDAQ100_all_components()
 
-# #z-score trading simulation
-# #
+if index_selected=='ftse':
+    target_df=fetch_ftse100_index()
+    components_df=fetch_ftse100_all_components()
+
+if index_selected=='sp':
+    target_df=fetch_SP500_index()
+    components_df=fetch_SP500_all_components()
+
+#-----PCA function
+#
+# Define input variables
+X_log=preprocessing(components_df)
+n_stocks = 30               # number of stocks used for the replication
+window = 30                 # period the trading strat goes
+n_pcs = 3                   # number of eigenvectors
+pca_date = '2023-06-16'     # date on which the PCA is run
+
+# Get weights
+rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
+
+#
+#------Regression signal placeholder
+
+# -----z-score trading simulation
+#
 pca_weights_df=daily_weight
 underlying_df=stock_price
 target_df=target_close_price
-cal_days=60
-trade_days=30
+cal_days=60                 # number of days for the z score
+trade_days=30               # maximum number of trading days
+thresholds=[0.5,2,-0.5,-2]  # thresholds for trading signals
 
-bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, dynamic=False)
+#calling the simulation
+bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 bt_result.to_csv(cwd + "/data/backtesting.csv")

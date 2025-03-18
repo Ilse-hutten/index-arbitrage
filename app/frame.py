@@ -64,7 +64,3 @@ class Frame:
         df_latest.fillna(method='ffill', inplace=True)
         print('Completed prepocessing.')
         return df_latest
-
-### maybe to remove after
-data=Frame()
-data.dataset()

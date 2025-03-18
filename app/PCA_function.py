@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[34]:
-
 
 def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
     """
@@ -55,22 +53,6 @@ def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
     return rep_pf
 
 
-# In[35]:
-
-
-# Define input variables
-n_stocks = 30
-window = 30 # period the trading strat goes
-n_pcs = 3
-pca_date = '2023-06-16'
-z_window=60 # to calc z score
-
-# Get weights
-rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
-
-
-# In[36]:
-
-
-rep_pf
-
+def preprocessing(stock_df):
+    log_returns=1
+    return log_returns

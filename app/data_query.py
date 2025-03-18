@@ -109,3 +109,4 @@ def fetch_ftse100_all_components():
     df = query_job.to_dataframe()
 
     return df  # Return the DataFrame
+

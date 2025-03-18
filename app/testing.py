@@ -7,7 +7,7 @@ from google.cloud import bigquery
 import os
 
 
-def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, dynamic=False):
+def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False):
 
     #conventions: trade_days is the length of the trade with the initial day being counted as day 1
     #cal_days is the obeservation period of the spread with Day 0 being the Day 1 in the trade
@@ -26,7 +26,7 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     breakpoint()
 
     #target_df.index = pd.to_datetime(target_df.index)
-    
+
     investment_aligned=weight_aligned.join(target_df)
     #
     #modify for target name!!!
