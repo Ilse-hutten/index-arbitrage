@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[34]:
-
 
 def rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date):
     """
@@ -73,4 +71,3 @@ rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
 
 
 rep_pf
-

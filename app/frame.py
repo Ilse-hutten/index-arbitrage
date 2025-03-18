@@ -6,9 +6,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 class Frame:
-    def dataset(self):
+    def dataset(self,name='FTSE_100'):
         print('Fetching and Merging...')
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../data/" + 'lewagon-statistical-arbitrage-ae470f7dcd48.json'
+        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../data/" + 'lewagon-statistical-arbitrage-ae470f7dcd48.json'
         client = storage.Client()
         bucket = client.get_bucket('stat_arb')
         rename_dict = {
@@ -22,7 +22,7 @@ class Frame:
         expected_columns = list(rename_dict.values())
 
         #SUGGESTION Folder prefix should be made flexible eventually
-        folder_prefix = "FTSE_100/"
+        folder_prefix = name+"/"
 
 
         blobs = bucket.list_blobs(prefix=folder_prefix)
