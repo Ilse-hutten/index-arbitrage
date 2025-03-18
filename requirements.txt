@@ -19,3 +19,6 @@ seaborn
 google-cloud-storage
 traitlets
 db-dtypes
+fastapi
+uvicorn
+joblib
