@@ -11,28 +11,31 @@ from data_query import fetch_SP500_all_components
 from data_query import fetch_ftse100_index
 from data_query import fetch_ftse100_all_components
 from PCA_function import rolling_pca_weights
-from PCA_function import preprocessing
 #
 #-----Pulling data from Big Query
 #
-index_selected= 'nasdaq'
+index_selected='nasdaq'
+#
+# SP500, ftse
+#
+if index_selected=='nasdaq':
+    target_df= fetch_NASDAQ100_index()
+    underlying_df=fetch_NASDAQ100_all_components()
 
-if index_selected== "nasdaq":
-    target_df=fetch_NASDAQ100_index()
-    components_df=fetch_NASDAQ100_all_components()
+if index_selected=='sp500':
+    target_df= fetch_SP500_index()
+    underlying_df=fetch_SP500_all_components()
 
 if index_selected=='ftse':
-    target_df=fetch_ftse100_index()
-    components_df=fetch_ftse100_all_components()
+    target_df= fetch_ftse100_index()
+    underlying_df=fetch_ftse100_all_components()
 
-if index_selected=='sp':
-    target_df=fetch_SP500_index()
-    components_df=fetch_SP500_all_components()
+
 
 #-----PCA function
 #
 # Define input variables
-X_log=preprocessing(components_df)
+X_log=underlying_df
 n_stocks = 30               # number of stocks used for the replication
 window = 30                 # period the trading strat goes
 n_pcs = 3                   # number of eigenvectors
