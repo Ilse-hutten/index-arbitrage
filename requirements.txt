@@ -15,3 +15,4 @@ jupyterlab
 matplotlib
 seaborn
 google-cloud-storage
+db-dtypes
