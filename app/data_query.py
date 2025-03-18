@@ -8,96 +8,32 @@ from google.cloud import bigquery
 #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
 
 
+
+def fetch_data(dataset: str, table: str):
+
+    query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
+
+    client = bigquery.Client()  # Initialize BigQuery client
+    return client.query(query).to_dataframe()  # Run query and return DataFrame
+
+# Fetching functions for specific datasets
 def fetch_NASDAQ100_index():
-    """Fetch NASDAQ100 index data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.NASDAQ100.NASDAQ100_index` ORDER BY date
-    """
-
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame
+    return fetch_data("NASDAQ100", "NASDAQ100_index")
 
 def fetch_NASDAQ100_all_components():
-    """Fetch NASDAQ100 all components data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.NASDAQ100.NASDAQ100_all_components` ORDER BY date
-    """
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame
+    return fetch_data("NASDAQ100", "NASDAQ100_all_components")
 
 def fetch_SP500_index():
-    """Fetch SP500 index data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.SP500.SP500_index` ORDER BY date
-    """
-
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame
-
+    return fetch_data("SP500", "SP500_index")
 
 def fetch_SP500_all_components():
-    """Fetch SP500 all components data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.SP500.SP500_all_components` ORDER BY date
-    """
-
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame
+    return fetch_data("SP500", "SP500_all_components")
 
 def fetch_ftse100_index():
-    """Fetch FTSE 100 index data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.FTSE100.FTSE100_index` ORDER BY date
-    """
-
-    # Initialize BigQuery client
-    client = bigquery.Client()
-
-    # Run the query
-    query_job = client.query(query)
-
-    # Convert results to Pandas DataFrame
-    df = query_job.to_dataframe()
-
-    return df  # Return the DataFrame
+    return fetch_data("FTSE100", "FTSE100_index")
 
 def fetch_ftse100_all_components():
-    """Fetch FTSE 100 all components data from BigQuery and return as a Pandas DataFrame."""
-    query = """
-    SELECT * FROM `lewagon-statistical-arbitrage.FTSE100.FTSE100_all_components`ORDER BY date
-    """
+    return fetch_data("FTSE100", "FTSE100_all_components")
 
     # Initialize BigQuery client
     client = bigquery.Client()
@@ -109,4 +45,3 @@ def fetch_ftse100_all_components():
     df = query_job.to_dataframe()
 
     return df  # Return the DataFrame
-

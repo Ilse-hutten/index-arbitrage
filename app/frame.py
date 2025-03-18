@@ -6,9 +6,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 class Frame:
-    def dataset(self):
+    def dataset(self,name='FTSE_100'):
         print('Fetching and Merging...')
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../data/" + 'lewagon-statistical-arbitrage-ae470f7dcd48.json'
+        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../data/" + 'lewagon-statistical-arbitrage-ae470f7dcd48.json'
         client = storage.Client()
         bucket = client.get_bucket('stat_arb')
         rename_dict = {
@@ -22,7 +22,7 @@ class Frame:
         expected_columns = list(rename_dict.values())
 
         #SUGGESTION Folder prefix should be made flexible eventually
-        folder_prefix = "FTSE_100/"
+        folder_prefix = name+"/"
 
 
         blobs = bucket.list_blobs(prefix=folder_prefix)
@@ -58,9 +58,11 @@ class Frame:
         df_pivoted = df_modified.pivot_table(index='date', columns='source_file', values='close')
         df_pivoted.reset_index(inplace=True)
 
-        #SUGGESTION should make time frame flexible eventually
-        df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
-        df_latest.drop(columns=['HLN'],inplace=True)
-        df_latest.fillna(method='ffill', inplace=True)
+        # df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
+        df_pivoted.fillna(method='ffill', inplace=True)
         print('Completed prepocessing.')
+<<<<<<< HEAD
         return df_latest
+=======
+        return df_pivoted
+>>>>>>> 8cc847859cb5869f40e47d54b507f70e7f9aa3a1

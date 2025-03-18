@@ -11,8 +11,14 @@ google-cloud-bigquery-storage
 pytest
 pylint
 ipdb
+numpy
+pandas
 jupyterlab
 matplotlib
 seaborn
 google-cloud-storage
+traitlets
 db-dtypes
+fastapi
+uvicorn
+joblib
