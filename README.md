@@ -13,7 +13,7 @@ Data
 
 
       date ('yyyy-mm-dd')
-      
+
       rename_dict = {
                         'Unnamed: 0': 'date',
                         '1. open': 'open',

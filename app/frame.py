@@ -58,13 +58,7 @@ class Frame:
         df_pivoted = df_modified.pivot_table(index='date', columns='source_file', values='close')
         df_pivoted.reset_index(inplace=True)
 
-        #SUGGESTION should make time frame flexible eventually
-        df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
-        df_latest.drop(columns=['HLN'],inplace=True)
-        df_latest.fillna(method='ffill', inplace=True)
+        # df_latest=df_pivoted[df_pivoted['date']>'2022-01-31']
+        df_pivoted.fillna(method='ffill', inplace=True)
         print('Completed prepocessing.')
-        return df_latest
-
-### maybe to remove after
-data=Frame()
-data.dataset()
+        return df_pivoted
