@@ -11,10 +11,11 @@ from data_query import fetch_SP500_all_components
 from data_query import fetch_ftse100_index
 from data_query import fetch_ftse100_all_components
 from PCA_function import rolling_pca_weights
+from preprocessing import preprocessing_X
 #
 #-----Pulling data from Big Query
 #
-index_selected='nasdaq'
+index_selected='ftse'
 #
 # SP500, ftse
 #
@@ -29,9 +30,11 @@ if index_selected=='sp500':
 if index_selected=='ftse':
     target_df= fetch_ftse100_index()
     underlying_df=fetch_ftse100_all_components()
-
-
-
+#
+#pre-processing the components
+#
+processed_df=preprocessing_X(underlying_df)
+#
 #-----PCA function
 #
 # Define input variables
@@ -40,10 +43,14 @@ n_stocks = 30               # number of stocks used for the replication
 window = 30                 # period the trading strat goes
 n_pcs = 3                   # number of eigenvectors
 pca_date = '2023-06-16'     # date on which the PCA is run
-
+#
 # Get weights
+breakpoint()
+
 rep_pf = rolling_pca_weights(X_log, n_stocks, window, n_pcs, pca_date)
 
+breakpoint()
+#
 #
 #------Regression signal placeholder
 
