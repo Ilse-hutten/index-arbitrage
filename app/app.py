@@ -205,7 +205,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🎯 Animated Section Header
-st.markdown('<div class="section-header">⚙️ Select Strategy Parameters</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', unsafe_allow_html=True)
 
 # 🎛 Interactive Parameter Selection
 # ✅ Function to Fetch Data from BigQuery
@@ -217,7 +217,6 @@ def fetch_data(dataset: str, table: str):
     return client.query(query).to_dataframe()  # Run query and return DataFrame
 
 # ✅ Fetching functions for specific datasets
-# ✅ Function to Fetch Data from BigQuery
 # ✅ Function to Fetch Data from BigQuery
 def fetch_data(dataset: str, table: str):
     """Fetch data from BigQuery dataset and table"""
@@ -262,54 +261,45 @@ if submitted:
 
         # 🎯 Step 1: Preprocess Data
         def preprocessing_X(df):
-            """Preprocesses the stock price data to log returns and selects best stocks."""
+            """Preprocesses the stock price data to log returns."""
             df = df.set_index("date")
             df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
-            df = df.dropna()
-
-            # ✅ Select `num_stocks` most volatile stocks (highest variance)
-            top_stocks = df.var().nlargest(num_stocks).index
-            return df[top_stocks]  # Keep only the selected stocks
+            return df.dropna()
 
         processed_df = preprocessing_X(underlying_df)
 
         # 🎯 Step 2: Apply Rolling PCA & Get Stock Weights
-        def rolling_pca_weights(X_log, window, n_pcs):
-            """Computes rolling PCA and returns a DataFrame with normalized stock weights."""
-            tickers = X_log.columns  # Selected stock tickers
+        def rolling_pca_weights(X_log, n_stocks, window, n_pcs):
+            """Computes rolling PCA and returns a DataFrame with the final stock weights."""
+            tickers = X_log.columns  # All stock tickers
+            selected_tickers = tickers[:n_stocks]  # Select the first `n_stocks`
             results = []
 
             # Rolling PCA Calculation
             for i in range(len(X_log) - window):
-                X_window = X_log.iloc[i : i + window]  # Select the rolling window
+                X_window = X_log.iloc[i : i + window, :n_stocks]  # Select the rolling window
                 pca = PCA(n_components=n_pcs)
                 pca.fit(X_window)
-                weights = pca.components_.T[:, 0]  # First eigenvector (PCA weights)
-
-                # ✅ Normalize the weights so their sum of absolute values = 1
-                weights /= np.sum(np.abs(weights))
+                weights = pca.components_.T[:, 0]  # Select the first eigenvector
                 results.append(weights)
 
             # Compute the final mean weight across rolling windows
             mean_weights = np.mean(results, axis=0)
 
             # Convert weights into a DataFrame
-            weights_df = pd.DataFrame([mean_weights], columns=tickers)
+            weights_df = pd.DataFrame([mean_weights], columns=selected_tickers)
             return weights_df
 
         # 🎯 Step 3: Compute PCA Weights
-        rep_pf = rolling_pca_weights(processed_df, calibration_days, n_pcs=3)
+        rep_pf = rolling_pca_weights(processed_df, num_stocks, calibration_days, n_pcs=3)
 
         # ✅ Display Results
         st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
         st.dataframe(rep_pf.style.format("{:.4f}"))  # Display with formatting
 
-        # ✅ Display Stock Weight Bar Chart
-        fig = px.bar(rep_pf.T, x=rep_pf.columns, y=0, title="PCA Portfolio Weights", labels={"0": "Weight"})
-        st.plotly_chart(fig)
-
     else:
         st.error("🚨 No data available for this index. Try again.")
+
 
 # Section: Trading Strategy
 st.markdown("""
@@ -345,21 +335,75 @@ st.markdown("""
 st.markdown('<div class="strategy-header">📊 Trading Strategy Execution</div>', unsafe_allow_html=True)
 
 # 📢 Animated Strategy Description
-st.markdown('<div class="strategy-description">🚀 The system will leverage <b>PCA (Principal Component Analysis)</b> to identify high-probability arbitrage opportunities, optimizing stock selection dynamically.</div>', unsafe_allow_html=True)
+st.subheader("📢 Animated Strategy Description")
+st.write("""
+- Our trading strategy is built on a **Replication Portfolio** derived from **PCA (Principal Component Analysis)**
+- We calculate the **Z-score** of the spread between the log returns of the replication portfolio and the market index
+- The Z-score determines our trade signals and positions:
+    - **Z-score < -2:** Go **long the index** and **short the replication portfolio**
+    - **Close the position:** When the Z-score rises above -0.5
+    - **Z-score > 2:** Go **short the index** and **long the replication portfolio**
+    - **Close the position:** When the Z-score drops below 0.5
+- In case of no trading signal generated by the model, we hold the market index to maintain market exposure
+- Z-score thresholds can be amended to optimize trading opportunities
+""")
+
+# 🎯 Animated Section Header
+st.markdown('<div class="section-header">⚙️ Select Z-Score Parameters</div>', unsafe_allow_html=True)
+
+# 📊 Interactive Parameter Selection
+with st.form(key='form_zscore_selection'):
+    # 🎛 Slider for Calibration Days
+    calibration_days = st.slider(
+        "📅 Select Number of Calibration Days (Z-score calculation)",
+        min_value=30, max_value=90, value=60
+    )
+
+    # 🎛 Radio Buttons for Z-Score Thresholds
+    zscore_thresholds = st.radio(
+        "📈 Select Z-Score Thresholds for Entering a Trade:",
+        options=[
+            (-2, 2),  # Option 1: -2 and 2
+            (-1.5, 1.5)  # Option 2: -1.5 and 1.5
+        ],
+        index=0  # Default to (-2, 2)
+    )
+
+    # Fixed Threshold Information
+    st.markdown("""
+    - 🚨 **Note:** Positions will always close when the Z-score rises above -0.5 or falls below 0.5
+    """, unsafe_allow_html=True)
+
+    # Submit Button
+    submitted = st.form_submit_button("✅ Confirm Parameters")
+
+# ✅ Display Selected Parameters After Submission
+if submitted:
+    with st.spinner("Processing your selection..."):
+        time.sleep(1)  # Simulating processing time
+    st.success(f"🎯 Calibration Days: {calibration_days}")
+    st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
+    st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
+
+    # Optionally: Display next steps or instructions
+    st.markdown("""
+        The selected parameters are ready to be applied to your trading strategy.
+        Adjust calibration days and entry thresholds dynamically to find optimal performance!
+    """)
 
 # Simulated Strategy Output Graph
 st.subheader("Strategy Output Graph")
 output_data = pd.DataFrame(np.cumsum(np.random.randn(100)), columns=["Cumulative Returns"])
-fig_output = px.line(output_data, y="Cumulative Returns", title="Simulated Trading Performance")
+fig_output = px.line(output_data, y="Cumulative Returns", title="Simulated Performance of Trading Strategy versus Market Index")
 st.plotly_chart(fig_output)
 
-# Section: Summary of Findings
+# 📊 Key Findings
 st.subheader("📊 Key Findings")
 st.write("""
-- Statistical Arbitrage identifies inefficiencies in market pricing.
-- PCA helps in reducing dimensionality and finding key trading signals.
-- Performance varies based on index and input parameters.
-- Diversification across multiple stocks improves risk-adjusted returns.
+- Statistical Arbitrage leverages inefficiencies in market pricing to identify profitable opportunities
+- PCA (Principal Component Analysis) identifies a **replication portfolio** composed of stocks that most explain the variability in the market index. This replication portfolio serves as the foundation for our trading strategy
+- By calculating the spread between the log returns of the replication portfolio and the index, trade signals can be generated to exploit potential arbitrage opportunities
+- Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
 """)
 
 # Section: Download Strategy
@@ -400,7 +444,6 @@ st.info("💡 *'Just holding might be the better method if you want to keep it s
 ####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 ### dynamics should be true in streamlit
 #### input cal_ days, trade_days, thresholds,
-
 ####
 ####
 ####calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
