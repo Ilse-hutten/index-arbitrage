@@ -9,17 +9,12 @@ import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
 from PCA_function import rolling_pca_weights
+from google.oauth2 import service_account
 
-
-FASTAPI_BASE_URL = ""
-
-
-# ENDPOINTS = {
-#     "Index Data": f"{FASTAPI_BASE_URL}/get_market_data",
-#     "Live Stock Prices": f"{FASTAPI_BASE_URL}/get_live_prices",
-#     "Trading Signals": f"{FASTAPI_BASE_URL}/get_trading_signals"
-# }
-
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = bigquery.Client(credentials=credentials)
 
 # Set page title and layout
 # Set page title, layout, and icon
@@ -28,6 +23,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+FASTAPI_BASE_URL = ""
+
+
+# ENDPOINTS = {
+#     "Index Data": f"{FASTAPI_BASE_URL}/get_market_data",
+#     "Live Stock Prices": f"{FASTAPI_BASE_URL}/get_live_prices",
+#     "Trading Signals": f"{FASTAPI_BASE_URL}/get_trading_signals"
+# }
 
 # Custom CSS for animations & styling
 st.markdown("""
@@ -95,7 +98,7 @@ def fetch_data(dataset: str, table: str, index_name: str):
     """Fetch data from BigQuery and rename the selected index column to 'price'"""
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
 
-    client = bigquery.Client()  # Initialize BigQuery client
+    # Initialize BigQuery client
     df = client.query(query).to_dataframe()
 
     # ✅ Rename the specific index column to "price"
@@ -214,8 +217,15 @@ def fetch_data(dataset: str, table: str):
     """Fetch data from BigQuery dataset and table"""
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
 
-    client = bigquery.Client()  # Initialize BigQuery client
+    # Initialize BigQuery client
     return client.query(query).to_dataframe()  # Run query and return DataFrame
+
+# ✅ Fetching functions for specific datasets
+# ✅ Function to Fetch Data from BigQuery
+def fetch_data(dataset: str, table: str):
+    """Fetch data from BigQuery dataset and table"""
+    query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
+    return client.query(query).to_dataframe()
 
 # ✅ Fetching functions for specific datasets
 def fetch_NASDAQ100_all_components():
