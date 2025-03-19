@@ -22,3 +22,4 @@ db-dtypes
 fastapi
 uvicorn
 joblib
+plotly
