@@ -8,6 +8,7 @@ import time
 import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
+from PCA_function import rolling_pca_weights
 
 
 FASTAPI_BASE_URL = ""
@@ -212,8 +213,9 @@ st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', un
 def fetch_data(dataset: str, table: str):
     """Fetch data from BigQuery dataset and table"""
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
-    client = bigquery.Client()
-    return client.query(query).to_dataframe()
+
+    client = bigquery.Client()  # Initialize BigQuery client
+    return client.query(query).to_dataframe()  # Run query and return DataFrame
 
 # ✅ Fetching functions for specific datasets
 def fetch_NASDAQ100_all_components():
@@ -235,8 +237,10 @@ index_options = {
 # 📊 Interactive Index Selection in Streamlit
 with st.form(key='form_bigquery_selection'):
     selected_index = st.selectbox("🔍 Choose an index to analyze:", list(index_options.keys()))
-    time_period = st.slider("⏳ Select Time Period (days)", min_value=30, max_value=200, value=100)
+    pca_date = st.date_input("📅 Select Date for PCA Analysis")  # Interactive date input
     num_stocks = st.number_input("📈 Number of Stocks", min_value=10, max_value=60, value=20)
+    calibration_days = st.slider("📅 Select Number of Calibration Days (PCA Window)", min_value=30, max_value=90, value=60)
+    n_pcs = st.slider("🧮 Select Number of Principal Components (n_pcs)", min_value=1, max_value=10, value=3)
 
     # Submit button
     submitted = st.form_submit_button("🔍 Get Replication Portfolio Weights")
@@ -244,7 +248,8 @@ with st.form(key='form_bigquery_selection'):
 # ✅ Fetch Data and Process PCA on Submission
 if submitted:
     with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
-        underlying_df = index_options[selected_index]()  # Fetch the correct dataset
+        # Fetch the correct dataset
+        underlying_df = index_options[selected_index]()
         time.sleep(2)
 
     if not underlying_df.empty:
@@ -254,77 +259,48 @@ if submitted:
         def preprocessing_X(df):
             """Preprocesses the stock price data to log returns."""
             df = df.set_index("date")
+            df.index = pd.to_datetime(df.index)  # Ensure index is in datetime format
             df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
             return df.dropna()
 
         processed_df = preprocessing_X(underlying_df)
 
-        # 🎯 Step 2: Apply Rolling PCA & Get Stock Weights
-        def rolling_pca_weights(X_log, n_stocks, time_period, n_pcs):
-            """Computes rolling PCA and returns a DataFrame with the final stock weights."""
-            tickers = X_log.columns  # All stock tickers
-            selected_tickers = X_log.var().nlargest(n_stocks).index  # ✅ Select most volatile stocks
-            results = []
+        # Ensure `pca_date` is a valid datetime object
+        pca_date_str = str(pca_date)  # Convert Streamlit date input to string
+        pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
 
-            # Rolling PCA Calculation
-            for i in range(len(X_log) - time_period):
-                X_window = X_log.iloc[i : i + time_period][selected_tickers]  # Select the rolling window
-                pca = PCA(n_components=n_pcs)
-                pca.fit(X_window)
-                weights = pca.components_.T[:, 0]  # Select the first eigenvector
-                results.append(weights)
+        # 🎯 Step 2: Apply Rolling PCA for the Selected Date
+        if pca_date in processed_df.index:
+            # Use the existing `rolling_pca_weights` function
+            rep_pf = rolling_pca_weights(
+                X_log=processed_df,           # Log returns DataFrame
+                n_stocks=num_stocks,          # Number of stocks
+                window_pca=calibration_days,  # PCA window (selected via slider)
+                n_pcs=n_pcs                   # Number of principal components (selected via slider)
+            )
 
-            # Compute the final mean weight across rolling windows
-            mean_weights = np.mean(results, axis=0)
+            # Filter weights for the selected PCA date
+            if pca_date in rep_pf.index:
+                rep_pf_for_date = rep_pf.loc[[pca_date]]  # Get weights for the specific date
 
-            # Convert weights into a DataFrame
-            weights_df = pd.DataFrame([mean_weights], columns=selected_tickers)
-            return weights_df
+                # Filter to only include stocks with weights > 0
+                filtered_rep_pf_for_date = rep_pf_for_date.loc[:, rep_pf_for_date.iloc[0] > 0]
 
-        # 🎯 Step 3: Compute PCA Weights
-        rep_pf = rolling_pca_weights(processed_df, num_stocks, time_period, n_pcs=3)  # ✅ Fixed function call
+                # Format the date row index to display only the date (no time)
+                filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
 
-        # ✅ Step 4: Multiply Weights by Stock Prices to Compute Portfolio Value
-        stock_prices_df = underlying_df.set_index("date")  # Ensure date is index
-
-        # 🛠 **Align stock prices and weights**
-        selected_tickers = stock_prices_df.columns.intersection(rep_pf.columns)
-        stock_prices_df = stock_prices_df[selected_tickers]
-        rep_pf = rep_pf[selected_tickers]  # Keep only tickers present in both
-
-        # 🚨 **Ensure data is not empty before proceeding**
-        if stock_prices_df.empty or rep_pf.empty:
-            st.error("🚨 Missing data for portfolio computation. Try selecting different parameters.")
-            st.stop()
-
-        # 🛠 **Debugging Output: Check Shapes Before Multiplication**
-        st.write(f"Stock Prices Shape: {stock_prices_df.shape}")  # (num_dates, num_stocks)
-        st.write(f"Portfolio Weights Shape: {rep_pf.shape}")  # (1, num_stocks)
-
-        # ✅ Ensure `rep_pf_vector` has the correct shape
-        rep_pf_vector = rep_pf.iloc[0, :].squeeze()  # Convert to Series
-
-        st.write(f"Replicated Portfolio Vector Shape: {rep_pf_vector.shape}")  # Should be (num_stocks,)
-
-        # ✅ Perform matrix multiplication correctly
-        portfolio_values = stock_prices_df.dot(rep_pf_vector)
-
-        # ✅ Display Results
-        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
-        st.dataframe(rep_pf.style.format("{:.4f}"))  # Display with formatting
-
-        # ✅ Display Stock Weight Bar Chart
-        fig = px.bar(rep_pf.T, x=rep_pf.columns, y=0, title="PCA Portfolio Weights", labels={"0": "Weight"})
-        st.plotly_chart(fig)
-
-        # ✅ Plot Portfolio Value Over Time
-        fig2 = px.line(portfolio_values, x=portfolio_values.index, y=portfolio_values.values,
-                       title="Portfolio Value Over Time", labels={"y": "Portfolio Value"})
-        st.plotly_chart(fig2)
-
+                # ✅ Display Results
+                st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+                st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
+            else:
+                st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
+        else:
+            st.error(f"🚨 Selected date {pca_date.date()} not found in the dataset. Try another date.")
     else:
         st.error("🚨 No data available for this index. Try again.")
 
+
+st.write(filtered_rep_pf_for_date.T)
 # Section: Trading Strategy
 st.markdown("""
     <style>
@@ -373,47 +349,7 @@ st.write("""
 """)
 
 # 🎯 Animated Section Header
-st.markdown('<div class="section-header">⚙️ Select Z-Score Parameters</div>', unsafe_allow_html=True)
-
-# 📊 Interactive Parameter Selection
-with st.form(key='form_zscore_selection'):
-    # 🎛 Slider for Calibration Days
-    calibration_days = st.slider(
-        "📅 Select Number of Calibration Days (Z-score calculation)",
-        min_value=30, max_value=90, value=60
-    )
-
-    # 🎛 Radio Buttons for Z-Score Thresholds
-    zscore_thresholds = st.radio(
-        "📈 Select Z-Score Thresholds for Entering a Trade:",
-        options=[
-            (-2, 2),  # Option 1: -2 and 2
-            (-1.5, 1.5)  # Option 2: -1.5 and 1.5
-        ],
-        index=0  # Default to (-2, 2)
-    )
-
-    # Fixed Threshold Information
-    st.markdown("""
-    - 🚨 **Note:** Positions will always close when the Z-score rises above -0.5 or falls below 0.5
-    """, unsafe_allow_html=True)
-
-    # Submit Button
-    submitted = st.form_submit_button("✅ Confirm Parameters")
-
-# ✅ Display Selected Parameters After Submission
-if submitted:
-    with st.spinner("Processing your selection..."):
-        time.sleep(1)  # Simulating processing time
-    st.success(f"🎯 Calibration Days: {calibration_days}")
-    st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
-    st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
-
-    # Optionally: Display next steps or instructions
-    st.markdown("""
-        The selected parameters are ready to be applied to your trading strategy.
-        Adjust calibration days and entry thresholds dynamically to find optimal performance!
-    """)
+st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', unsafe_allow_html=True)
 
 # Simulated Strategy Output Graph
 st.subheader("Strategy Output Graph")
@@ -442,7 +378,6 @@ if st.button("Download Strategy as CSV"):
 
 # Final Note
 st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
-
 
 
 # st.title("Stat Arb!")
