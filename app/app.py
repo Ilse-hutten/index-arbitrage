@@ -7,6 +7,8 @@ from streamlit_extras.metric_cards import style_metric_cards
 import time
 import requests
 from google.cloud import bigquery
+from sklearn.decomposition import PCA
+
 
 FASTAPI_BASE_URL = ""
 
@@ -206,34 +208,98 @@ st.markdown("""
 st.markdown('<div class="section-header">⚙️ Select Strategy Parameters</div>', unsafe_allow_html=True)
 
 # 🎛 Interactive Parameter Selection
-with st.container():
-    st.markdown('<div class="input-container">', unsafe_allow_html=True)
+# ✅ Function to Fetch Data from BigQuery
+def fetch_data(dataset: str, table: str):
+    """Fetch data from BigQuery dataset and table"""
+    query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
 
-    time_period = st.slider(
-        "⏳ Select Time Period (days)",
-        min_value=30,
-        max_value=365,
-        value=180,
-        help="Adjust the time period for analyzing market trends."
-    )
+    client = bigquery.Client()  # Initialize BigQuery client
+    return client.query(query).to_dataframe()  # Run query and return DataFrame
 
-    calibration_days = st.number_input(
-        "📅 Calibration Days",
-        min_value=30,
-        max_value=60,
-        value=45,
-        help="Choose the number of days to calibrate the strategy."
-    )
+# ✅ Fetching functions for specific datasets
+# ✅ Function to Fetch Data from BigQuery
+def fetch_data(dataset: str, table: str):
+    """Fetch data from BigQuery dataset and table"""
+    query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
+    client = bigquery.Client()
+    return client.query(query).to_dataframe()
 
-    num_stocks = st.number_input(
-        "📈 Number of Stocks",
-        min_value=10,
-        max_value=60,
-        value=20,
-        help="Define the number of stocks to include in the arbitrage strategy."
-    )
+# ✅ Fetching functions for specific datasets
+def fetch_NASDAQ100_all_components():
+    return fetch_data("NASDAQ100", "NASDAQ100_all_components")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+def fetch_SP500_all_components():
+    return fetch_data("SP500", "SP500_all_components")
+
+def fetch_ftse100_all_components():
+    return fetch_data("FTSE100", "FTSE100_all_components")
+
+# ✅ Dictionary to Map User Selection to Fetching Functions
+index_options = {
+    "FTSE100": fetch_ftse100_all_components,
+    "NASDAQ100": fetch_NASDAQ100_all_components,
+    "SP500": fetch_SP500_all_components
+}
+
+# 📊 Interactive Index Selection in Streamlit
+with st.form(key='form_bigquery_selection'):
+    selected_index = st.selectbox("🔍 Choose an index to analyze:", list(index_options.keys()))
+    time_period = st.slider("⏳ Select Time Period (days)", min_value=30, max_value=365, value=180)
+    calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
+    num_stocks = st.number_input("📈 Number of Stocks", min_value=10, max_value=60, value=20)
+
+    # Submit button
+    submitted = st.form_submit_button("🔍 Get Market Insights")
+
+# ✅ Fetch Data and Process PCA on Submission
+if submitted:
+    with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
+        underlying_df = index_options[selected_index]()  # Fetch the correct dataset
+        time.sleep(2)
+
+    if not underlying_df.empty:
+        st.success(f"✅ Successfully loaded {selected_index} market data!")
+
+        # 🎯 Step 1: Preprocess Data
+        def preprocessing_X(df):
+            """Preprocesses the stock price data to log returns."""
+            df = df.set_index("date")
+            df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
+            return df.dropna()
+
+        processed_df = preprocessing_X(underlying_df)
+
+        # 🎯 Step 2: Apply Rolling PCA & Get Stock Weights
+        def rolling_pca_weights(X_log, n_stocks, window, n_pcs):
+            """Computes rolling PCA and returns a DataFrame with the final stock weights."""
+            tickers = X_log.columns  # All stock tickers
+            selected_tickers = tickers[:n_stocks]  # Select the first `n_stocks`
+            results = []
+
+            # Rolling PCA Calculation
+            for i in range(len(X_log) - window):
+                X_window = X_log.iloc[i : i + window, :n_stocks]  # Select the rolling window
+                pca = PCA(n_components=n_pcs)
+                pca.fit(X_window)
+                weights = pca.components_.T[:, 0]  # Select the first eigenvector
+                results.append(weights)
+
+            # Compute the final mean weight across rolling windows
+            mean_weights = np.mean(results, axis=0)
+
+            # Convert weights into a DataFrame
+            weights_df = pd.DataFrame([mean_weights], columns=selected_tickers)
+            return weights_df
+
+        # 🎯 Step 3: Compute PCA Weights
+        rep_pf = rolling_pca_weights(processed_df, num_stocks, calibration_days, n_pcs=3)
+
+        # ✅ Display Results
+        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+        st.dataframe(rep_pf.style.format("{:.4f}"))  # Display with formatting
+
+    else:
+        st.error("🚨 No data available for this index. Try again.")
 
 # Section: Trading Strategy
 st.markdown("""
@@ -312,3 +378,18 @@ st.info("💡 *'Just holding might be the better method if you want to keep it s
 # st.write("Summary of key findings")
 # st.write("Download your strategy")
 # st.write("Just hold is the bettter method if you want to keep it simple")
+
+
+
+#### window_pca: Number of days the pca is calculated over to replace in streamlit
+
+
+
+##### calibration day another place
+
+####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
+### dynamics should be true in streamlit
+#### input cal_ days, trade_days, thresholds, 
+####
+####
+####
