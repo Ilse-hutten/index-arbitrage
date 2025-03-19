@@ -66,4 +66,3 @@ bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, tr
 
 bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
-#bt_results: return, when you enter a trade
