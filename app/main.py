@@ -13,6 +13,7 @@ from data_query import fetch_ftse100_all_components
 from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
+from output import alternative_asset_return
 import seaborn as sns
 import math
 from typing import List
@@ -62,7 +63,7 @@ cal_days=60                 # number of days for the z score
 trade_days=30               # maximum number of trading days
 thresholds=[2,200,-2,-200]  # thresholds for trading signals
                             # [short minimum threshold, short maximum threshold, long minimum threshold, long maximum threshold]
-exit_levels=[0.5,-0.5]      # thresholds for closing a trade
+exit_levels=[0,0]           # thresholds for closing a trade
                             # [exit level long position, exit level short position]
 
 #calling the simulation

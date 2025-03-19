@@ -1,6 +1,7 @@
 import seaborn as sns
 import pandas as pd
 import math
+import numpy as np
 
 def output(bt_res):
     bt_results=bt_res.reset_index()
@@ -19,7 +20,20 @@ def output(bt_res):
 
     return bt_to_API
 
-def saving_results():
-    any_errors=False
+def alternative_asset_return(bt_res):
+    alt_return_df=pd.DataFrame(bt_res['direction'])
+    alt_return_df=alt_return_df.join(bt_res[['target entry']])
+    alt_return_df['daily target return']=np.log(alt_return_df['target entry']/alt_return_df['target entry'].shift(1))
+    alt_return_df['excess return']=alt_return_df['direction']*(bt_res['target return']-bt_res['replication return'])
 
-    return any_errors
+    alt_return_df=alt_return_df.reset_index()
+
+    alt_return_df['strategy']=alt_return_df['target entry']
+
+    for i in range(1, len(alt_return_df)):
+        if alt_return_df.iloc[i]['direction'] == 0:
+            alt_return_df.loc[i, 'strategy'] = alt_return_df.loc[i-1, 'strategy'] * math.exp(alt_return_df.loc[i, 'daily target return'])
+        else:
+            alt_return_df.loc[i, 'strategy'] = alt_return_df.loc[i-1, 'strategy'] * math.exp(alt_return_df.loc[i, 'excess return'])
+
+    return alt_return_df
