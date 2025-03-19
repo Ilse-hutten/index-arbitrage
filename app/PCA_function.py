@@ -34,11 +34,11 @@ def rolling_pca_weights(X_log, n_stocks, window_pca, n_pcs):
 
     # Run rolling PCA for all windows
     for start in range(len(X_log) - window_pca):
-        compute_rolling_pca(start)
+       compute_rolling_pca(start)
 
     # Combine all summed PCs into DataFrame
     summed_pcs_full_df = pd.DataFrame(summed_pcs_full).T
-    summed_pcs_full_df.index.name = "Date"
+    summed_pcs_full_df.index.name = "date"
 
     # Initialize daily weights list
     daily_weights = []
