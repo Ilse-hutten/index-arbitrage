@@ -3,5 +3,6 @@
 data
 .python-version
 GCP.json
-__pycache__
+*/__pycache__/*
 */.ipynb_checkpoints/*
+.streamlit/
