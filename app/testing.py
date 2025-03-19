@@ -7,7 +7,7 @@ from google.cloud import bigquery
 import os
 
 
-def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False):
+def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_thresholds, dynamic=False):
     #
     #conventions: trade_days is the length of the trade with the initial day being counted as day 1
     #cal_days is the obeservation period of the spread with Day 0 being the Day 1 in the trade
@@ -150,13 +150,13 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
         #if the setting is dynamic looping through the z scores to identify when the position would have been closed
         if dynamic:
             if row['direction']==1:
-                for day in range(1, trade_days-1):
-                    if row[f'Trading Day {day}'] > exit_threshold:
+                for day in range(2, trade_days-1):
+                    if row[f'Day {day}'] > exit_thresholds[0]:
                         exit_day=day
                         break
             if row['direction']==-1:
-                for day in range(1, trade_days-1):
-                    if row[f'Trading Day {day}'] < exit_threshold:
+                for day in range(2, trade_days-1):
+                    if row[f'Day {day}'] < exit_thresholds[1]:
                         exit_day=day
                         break
 
