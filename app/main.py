@@ -93,6 +93,6 @@ def compute_bt_result(
     print('data processed')
     rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
 
-    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=True)
+    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds,exit_levels, dynamic=True)
     print('rec')
     return bt_result,rep_pf

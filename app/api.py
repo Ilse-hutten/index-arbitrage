@@ -19,7 +19,7 @@ def clean_dataframe(df):
     for col in df.select_dtypes(include=['datetime64', 'object']):
         df[col] = df[col].apply(lambda x: x.isoformat() if isinstance(x, (pd.Timestamp, datetime.date, datetime.datetime)) else x)
 
-    df.fillna(method='ffill', inplace=True)
+    #df.fillna(method='ffill', inplace=True)
     return df
 
 @app.get('/dataset_name')
@@ -83,11 +83,11 @@ def fetch_btresult_rolling_pca(
     n_pcs,thresholds,index_selected)
 
     data={
-            "bt_result": bt_result.to_dict(orient="records"),
-            "rep_pf": rep_pf.to_dict(orient="records")
-        }
+            "bt_result": json.loads(bt_result.to_json(orient="records", date_format="iso")),
+            "rep_pf":  json.loads(rep_pf.to_json(orient="records", date_format="iso"))
 
+        }
     return JSONResponse(content=data)
 
 
-print(compute_bt_result(30,30,30,30,4,[0.5, 2, -0.5, -2],'SP500'))
+# print(compute_bt_result(30,30,30,30,4,[0.5, 2, -0.5, -2],'SP500'))
