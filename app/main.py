@@ -59,7 +59,7 @@ cal_days=60                 # number of days for the z score
 trade_days=30               # maximum number of trading days
 thresholds=[2,200,-2,-200]  # thresholds for trading signals
                             # [short minimum threshold, short maximum threshold, long minimum threshold, long maximum threshold]
-exit_levels=[0,0]      # thresholds for closing a trade
+exit_levels=[0,0]           # thresholds for closing a trade
                             # [exit level long position, exit level short position]
 
 #calling the simulation
