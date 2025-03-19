@@ -75,7 +75,7 @@ def compute_bt_result(
     n_pcs:int,
     thresholds: List[float] =[0.5, 2, -0.5, -2],
     index_selected='SP500'):
-
+    ('starting')
     if index_selected=='NASDAQ100':
         target_df= fetch_NASDAQ100_index()
         underlying_df=fetch_NASDAQ100_all_components()
@@ -87,9 +87,9 @@ def compute_bt_result(
         underlying_df=fetch_ftse100_all_components()
 
     processed_df = preprocessing_X(underlying_df)
-
+    print('data processed')
     rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
 
     bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=True)
-
+    print('rec')
     return bt_result,rep_pf

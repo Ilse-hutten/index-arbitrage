@@ -1,7 +1,7 @@
 import datetime
 import json
 from typing import List
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from data_query import  *
 import pandas as pd
@@ -74,13 +74,13 @@ def fetch_btresult_rolling_pca(
     n_stocks:int,
     window:int,
     n_pcs:int,
-    thresholds: List[float] ,
-    index_selected):
+    thresholds:List[float] = Query([0.5, 2, -0.5, -2],description="Send in the order."),
+    index_selected:str='SP500',
+
+    ):
 
     bt_result,rep_pf=compute_bt_result(cal_days,trade_days,n_stocks,window,
-    n_pcs,
-    thresholds,
-    index_selected)
+    n_pcs,thresholds,index_selected)
 
     data={
             "bt_result": bt_result.to_dict(orient="records"),
@@ -88,3 +88,6 @@ def fetch_btresult_rolling_pca(
         }
 
     return JSONResponse(content=data)
+
+
+print(compute_bt_result(30,30,30,30,4,[0.5, 2, -0.5, -2],'SP500'))
