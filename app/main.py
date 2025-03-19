@@ -13,8 +13,12 @@ from data_query import fetch_ftse100_all_components
 from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
-from output import output
 from output import alternative_asset_return
+import seaborn as sns
+import math
+from typing import List
+from output import output
+
 #
 #-----Pulling data from Big Query
 #
@@ -66,8 +70,46 @@ exit_levels=[0,0]           # thresholds for closing a trade
 bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_levels, True)
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
 
+def output(bt_results):
+    bt_to_API=pd.DataFrame(bt_result['direction'] * (bt_result['target return']-bt_result['replication return']))
+    bt_to_API.columns=['log return by trade']
+    pd.concat(bt_to_API, bt_result['direction'])
+
+
+    bt_to_API['capital']=100
+    for i, row in bt_to_API.iterrows():
+        bt_to_API.loc[i+1,'capital']=bt_to_API.loc[i,'capital']*math.exp(bt_to_API.loc[i,'log return by trade'])
+
+    return bt_to_API
+
 bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
-bt_alt=alternative_asset_return(bt_result)
+#bt_results: return, when you enter a trade
 
-print(bt_alt)
+
+def compute_bt_result(
+    cal_days:int,
+    trade_days: int,
+    n_stocks:int,
+    window:int,
+    n_pcs:int,
+    thresholds: List[float] =[0.5, 2, -0.5, -2],
+    index_selected='SP500'):
+    ('starting')
+    if index_selected=='NASDAQ100':
+        target_df= fetch_NASDAQ100_index()
+        underlying_df=fetch_NASDAQ100_all_components()
+    elif index_selected=='SP500':
+        target_df= fetch_SP500_index()
+        underlying_df=fetch_SP500_all_components()
+    elif index_selected=='FTSE100':
+        target_df= fetch_ftse100_index()
+        underlying_df=fetch_ftse100_all_components()
+
+    processed_df = preprocessing_X(underlying_df)
+    print('data processed')
+    rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
+
+    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds,exit_levels, dynamic=True)
+    print('rec')
+    return bt_result,rep_pf
