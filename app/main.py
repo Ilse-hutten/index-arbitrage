@@ -64,4 +64,5 @@ exit_levels=[0.5,-0.5]      # thresholds for closing a trade
 bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_levels, True)
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
 
+bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
