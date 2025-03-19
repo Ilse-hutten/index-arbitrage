@@ -298,7 +298,19 @@ if submitted:
             return weights_df
 
         # 🎯 Step 3: Compute PCA Weights
-        rep_pf = rolling_pca_weights(processed_df, calibration_days, n_pcs=3)
+        rep_pf = rolling_pca_weights(processed_df, time_period, n_pcs=3)
+
+        # ✅ Step 4: Multiply Weights by Stock Prices to Compute Portfolio Value
+        # Re-fetch stock price data (to use actual prices)
+        stock_prices_df = underlying_df.set_index("date")  # Ensure date is index
+
+        # Ensure rep_pf contains correct stocks
+        selected_tickers = rep_pf.columns
+        stock_prices_df = stock_prices_df[selected_tickers]  # Keep only selected stocks
+
+        # Multiply stock prices by weights to get portfolio value per day
+        portfolio_values = stock_prices_df * rep_pf.values  # Element-wise multiplication
+        portfolio_values["Portfolio Value"] = portfolio_values.sum(axis=1)  # Sum across stocks
 
         # ✅ Display Results
         st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
@@ -307,6 +319,11 @@ if submitted:
         # ✅ Display Stock Weight Bar Chart
         fig = px.bar(rep_pf.T, x=rep_pf.columns, y=0, title="PCA Portfolio Weights", labels={"0": "Weight"})
         st.plotly_chart(fig)
+
+        # ✅ Plot Portfolio Value Over Time
+        fig2 = px.line(portfolio_values, x=portfolio_values.index, y="Portfolio Value",
+                       title="Portfolio Value Over Time", labels={"Portfolio Value": "Total Value"})
+        st.plotly_chart(fig2)
 
     else:
         st.error("🚨 No data available for this index. Try again.")
@@ -374,6 +391,7 @@ if st.button("Download Strategy as CSV"):
 
 # Final Note
 st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
+
 
 
 # st.title("Stat Arb!")
