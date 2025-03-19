@@ -9,7 +9,13 @@ import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
 
-
+# Set page title and layout
+# Set page title, layout, and icon
+st.set_page_config(
+    page_title="📊 Statistical Arbitrage Strategy 🚀",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 FASTAPI_BASE_URL = ""
 
 
@@ -18,15 +24,6 @@ FASTAPI_BASE_URL = ""
 #     "Live Stock Prices": f"{FASTAPI_BASE_URL}/get_live_prices",
 #     "Trading Signals": f"{FASTAPI_BASE_URL}/get_trading_signals"
 # }
-
-
-# Set page title and layout
-# Set page title, layout, and icon
-st.set_page_config(
-    page_title="📊 Statistical Arbitrage Strategy 🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Custom CSS for animations & styling
 st.markdown("""
