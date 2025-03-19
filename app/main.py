@@ -62,3 +62,4 @@ bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, tr
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
 
 # needs to be called to the API bt_result['spread']
+#bt_results: return, when you enter a trade

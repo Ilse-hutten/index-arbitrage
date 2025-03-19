@@ -218,6 +218,7 @@ def fetch_data(dataset: str, table: str):
 
 # ✅ Fetching functions for specific datasets
 # ✅ Function to Fetch Data from BigQuery
+# ✅ Function to Fetch Data from BigQuery
 def fetch_data(dataset: str, table: str):
     """Fetch data from BigQuery dataset and table"""
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
@@ -261,41 +262,51 @@ if submitted:
 
         # 🎯 Step 1: Preprocess Data
         def preprocessing_X(df):
-            """Preprocesses the stock price data to log returns."""
+            """Preprocesses the stock price data to log returns and selects best stocks."""
             df = df.set_index("date")
             df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
-            return df.dropna()
+            df = df.dropna()
+
+            # ✅ Select `num_stocks` most volatile stocks (highest variance)
+            top_stocks = df.var().nlargest(num_stocks).index
+            return df[top_stocks]  # Keep only the selected stocks
 
         processed_df = preprocessing_X(underlying_df)
 
         # 🎯 Step 2: Apply Rolling PCA & Get Stock Weights
-        def rolling_pca_weights(X_log, n_stocks, window, n_pcs):
-            """Computes rolling PCA and returns a DataFrame with the final stock weights."""
-            tickers = X_log.columns  # All stock tickers
-            selected_tickers = tickers[:n_stocks]  # Select the first `n_stocks`
+        def rolling_pca_weights(X_log, window, n_pcs):
+            """Computes rolling PCA and returns a DataFrame with normalized stock weights."""
+            tickers = X_log.columns  # Selected stock tickers
             results = []
 
             # Rolling PCA Calculation
             for i in range(len(X_log) - window):
-                X_window = X_log.iloc[i : i + window, :n_stocks]  # Select the rolling window
+                X_window = X_log.iloc[i : i + window]  # Select the rolling window
                 pca = PCA(n_components=n_pcs)
                 pca.fit(X_window)
-                weights = pca.components_.T[:, 0]  # Select the first eigenvector
+                weights = pca.components_.T[:, 0]  # First eigenvector (PCA weights)
+
+                # ✅ Normalize the weights so their sum of absolute values = 1
+                weights /= np.sum(np.abs(weights))
                 results.append(weights)
 
             # Compute the final mean weight across rolling windows
             mean_weights = np.mean(results, axis=0)
 
             # Convert weights into a DataFrame
-            weights_df = pd.DataFrame([mean_weights], columns=selected_tickers)
+            weights_df = pd.DataFrame([mean_weights], columns=tickers)
             return weights_df
 
         # 🎯 Step 3: Compute PCA Weights
-        rep_pf = rolling_pca_weights(processed_df, num_stocks, calibration_days, n_pcs=3)
+        rep_pf = rolling_pca_weights(processed_df, calibration_days, n_pcs=3)
 
         # ✅ Display Results
         st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
         st.dataframe(rep_pf.style.format("{:.4f}"))  # Display with formatting
+
+        # ✅ Display Stock Weight Bar Chart
+        fig = px.bar(rep_pf.T, x=rep_pf.columns, y=0, title="PCA Portfolio Weights", labels={"0": "Weight"})
+        st.plotly_chart(fig)
 
     else:
         st.error("🚨 No data available for this index. Try again.")
@@ -389,6 +400,7 @@ st.info("💡 *'Just holding might be the better method if you want to keep it s
 ####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 ### dynamics should be true in streamlit
 #### input cal_ days, trade_days, thresholds,
+
 ####
 ####
 ####calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
