@@ -14,8 +14,10 @@ from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
 import seaborn as sns
-
 import math
+from typing import List
+from output import output
+
 #
 #-----Pulling data from Big Query
 #
@@ -81,3 +83,32 @@ def output(bt_results):
 
 bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
+#bt_results: return, when you enter a trade
+
+
+def compute_bt_result(
+    cal_days:int,
+    trade_days: int,
+    n_stocks:int,
+    window:int,
+    n_pcs:int,
+    thresholds: List[float] =[0.5, 2, -0.5, -2],
+    index_selected='SP500'):
+    ('starting')
+    if index_selected=='NASDAQ100':
+        target_df= fetch_NASDAQ100_index()
+        underlying_df=fetch_NASDAQ100_all_components()
+    elif index_selected=='SP500':
+        target_df= fetch_SP500_index()
+        underlying_df=fetch_SP500_all_components()
+    elif index_selected=='FTSE100':
+        target_df= fetch_ftse100_index()
+        underlying_df=fetch_ftse100_all_components()
+
+    processed_df = preprocessing_X(underlying_df)
+    print('data processed')
+    rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
+
+    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds,exit_levels, dynamic=True)
+    print('rec')
+    return bt_result,rep_pf

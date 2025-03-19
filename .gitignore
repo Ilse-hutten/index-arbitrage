@@ -3,3 +3,5 @@
 data
 .python-version
 GCP.json
+__pycache__
+*/.ipynb_checkpoints/*

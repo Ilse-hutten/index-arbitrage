@@ -23,3 +23,7 @@ fastapi
 uvicorn
 joblib
 math
+plotly
+streamlit_extras
+streamlit
+
