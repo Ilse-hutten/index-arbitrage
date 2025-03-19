@@ -1,6 +1,7 @@
 import seaborn as sns
 import pandas as pd
 import math
+import numpy as np
 
 def output(bt_res):
     bt_results=bt_res.reset_index()
@@ -19,7 +20,7 @@ def output(bt_res):
 
     return bt_to_API
 
-def alternative_asset_return(bt_res, alt_dev):
+def alternative_asset_return(bt_res):
     alt_return_df=pd.DataFrame(bt_res['direction'])
     alt_return_df=alt_return_df.join(bt_res[['target entry']])
     alt_return_df['daily target return']=np.log(alt_return_df['target entry']/alt_return_df['target entry'].shift(1))

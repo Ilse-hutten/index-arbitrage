@@ -14,6 +14,7 @@ from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
 from output import output
+from output import alternative_asset_return
 #
 #-----Pulling data from Big Query
 #
@@ -67,3 +68,6 @@ bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, tr
 
 bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
+bt_alt=alternative_asset_return(bt_result)
+
+print(bt_alt)
