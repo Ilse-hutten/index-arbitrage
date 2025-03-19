@@ -35,15 +35,6 @@ FASTAPI_BASE_URL = ""
 # }
 
 
-
-# Set page title and layout
-st.set_page_config(
-    page_title="📊 Statistical Arbitrage Strategy 🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-
 # Custom CSS for animations & styling
 st.markdown("""
     <style>
