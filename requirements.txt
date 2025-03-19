@@ -24,3 +24,4 @@ uvicorn
 joblib
 plotly
 streamlit_extras
+streamlit
