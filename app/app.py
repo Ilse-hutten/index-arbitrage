@@ -244,12 +244,11 @@ index_options = {
 # 📊 Interactive Index Selection in Streamlit
 with st.form(key='form_bigquery_selection'):
     selected_index = st.selectbox("🔍 Choose an index to analyze:", list(index_options.keys()))
-    time_period = st.slider("⏳ Select Time Period (days)", min_value=30, max_value=365, value=180)
-    calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
+    time_period = st.slider("⏳ Select Time Period (days)", min_value=30, max_value=200, value=100)
     num_stocks = st.number_input("📈 Number of Stocks", min_value=10, max_value=60, value=20)
 
     # Submit button
-    submitted = st.form_submit_button("🔍 Get Market Insights")
+    submitted = st.form_submit_button("🔍 Get Replication Portfolio Weights")
 
 # ✅ Fetch Data and Process PCA on Submission
 if submitted:
@@ -389,7 +388,7 @@ st.info("💡 *'Just holding might be the better method if you want to keep it s
 
 ####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 ### dynamics should be true in streamlit
-#### input cal_ days, trade_days, thresholds, 
+#### input cal_ days, trade_days, thresholds,
 ####
 ####
-####
+####calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
