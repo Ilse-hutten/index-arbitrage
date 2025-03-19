@@ -8,7 +8,9 @@ import time
 import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
+from fastapi import FastAPI
 
+app = FastAPI()
 
 FASTAPI_BASE_URL = ""
 
@@ -21,7 +23,6 @@ FASTAPI_BASE_URL = ""
 
 
 # Set page title and layout
-# Set page title, layout, and icon
 st.set_page_config(
     page_title="📊 Statistical Arbitrage Strategy 🚀",
     layout="wide",
@@ -444,31 +445,7 @@ if st.button("Download Strategy as CSV"):
 st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
 
 
-
-# st.title("Stat Arb!")
-# st.write("Choose your index")
-# st.write("FTSE100      NASDAQ100      SP500")
-# st.write("Some kind of graph")
-# st.write("choose your variables")
-# st.write("Data source: google or local")
-# st.write("PCA input: Time periood, calibratioon days, number of stocks")
-# st.write("Trading strategy")
-# st.write("Graph for the output")
-# st.write("Summary of key findings")
-# st.write("Download your strategy")
-# st.write("Just hold is the bettter method if you want to keep it simple")
-
-
-
-#### window_pca: Number of days the pca is calculated over to replace in streamlit
-
-
-
-##### calibration day another place
-
 ####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
 ### dynamics should be true in streamlit
 #### input cal_ days, trade_days, thresholds,
-####
-####
 ####calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
