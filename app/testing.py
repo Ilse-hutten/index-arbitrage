@@ -30,21 +30,8 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     target_aligned=pd.concat([temp_df,target_df], join='inner', axis=1)
     column_to_delete=target_aligned.columns[0]
     target_aligned.drop(column_to_delete, inplace=True, axis=1)
-
-    # stock_aligned = pca_weights_df[[]].merge(underlying_df)
-    # weight_aligned = stock_aligned.merge(pca_weights_df,on="date")
-
-    # weight_aligned.set_index("date",inplace=True)
-    # stock_aligned.set_index("date",inplace=True)
-
-    # for name in stock_aligned.columns:
-    #     if name not in weight_aligned.columns:
-    #         stock_aligned.drop(name,axis=1,inplace=True)
-
-    #target_df.index = pd.to_datetime(target_df.index)
-
-    #need to make this flexible here!! FTSE price
     #
+
     replication_aligned = pd.DataFrame(weight_aligned.to_numpy() * target_aligned.to_numpy())
     weight_position = pd.DataFrame(replication_aligned.to_numpy()/stock_aligned.to_numpy())
 
@@ -58,18 +45,9 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     test_stock_aligned=stock_aligned.drop('date', axis=1)
 
     # Calculating replication portfolio for cal_days+trade_days days based on Date PCA
-    #
-    #creating empty dataframe with 90 columns
-    #replications_df=pd.DataFrame(columns=range(cal_days+trade_days), dtype=float)
 
     replications_df=pd.DataFrame(columns=range(cal_days+trade_days), dtype=float)
     replications_df
-
-    # for i,r in weight_position.reset_index().iterrows():
-    #     if i>cal_days:
-    #         try_1 = r * stock_aligned[i-cal_days-1:min(i+trade_days-1, len(weight_position))]
-    #         replication_index=pd.DataFrame(try_1.sum(axis=1).reset_index(drop=True))
-    #         replications_df=pd.concat([replications_df,replication_index.T], axis=0)
 
     for i,r in weight_position.iterrows():
         if i>cal_days:
@@ -78,7 +56,7 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
             replications_df=pd.concat([replications_df,replication_index.T], axis=0)
 
     replications_df.index=weight_position.index[cal_days+1:]
-    replications_df.columns=[f'Calibration Day {i-cal_days}' if i < (cal_days-1) else f'Trading Day {i-cal_days+1}' for i in range(0, cal_days+trade_days,1)]
+    replications_df.columns=[f'Calibration Day {i-cal_days}' if i < (cal_days) else f'Trading Day {i-cal_days+1}' for i in range(0, cal_days+trade_days,1)]
     replications_df=replications_df.astype(float)
 
     # #Calculating target for cal_days+trade_days days from Date
@@ -86,11 +64,11 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
 
     for i,r in weight_position.reset_index().iterrows():
         if i > cal_days:
-            target_match=pd.DataFrame(target_df.iloc[i-cal_days-1:min(i+trade_days-1, len(weight_position))].reset_index(drop=True))
+            target_match=pd.DataFrame(target_aligned.iloc[i-cal_days-1:min(i+trade_days-1, len(weight_position)),1].reset_index(drop=True))
             target_match_df=pd.concat([target_match_df,target_match.T], axis=0)
 
     target_match_df.index=weight_position.index[cal_days+1:]
-    target_match_df.columns=[f'Calibration Day {i-cal_days}' if i < (cal_days-1) else f'Trading Day {i-cal_days+1}' for i in range(0, cal_days+trade_days,1)]
+    target_match_df.columns=[f'Calibration Day {i-cal_days}' if i < (cal_days) else f'Trading Day {i-cal_days+1}' for i in range(0, cal_days+trade_days,1)]
     target_match_df=target_match_df.astype(float)
 
     #log_return calculation of the target and replication
