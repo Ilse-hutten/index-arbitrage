@@ -1,14 +1,6 @@
 import os
 from google.cloud import bigquery
 
-# Path to your BigQuery JSON key file
-#json_key_path = "big_query_key.json"
-
-# Set environment variable for authentication
-#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
-
-
-
 def fetch_data(dataset: str, table: str):
 
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
@@ -35,3 +27,7 @@ def fetch_ftse100_index():
 def fetch_ftse100_all_components():
     return fetch_data("FTSE100", "FTSE100_all_components")
 
+def eco_df():
+    return fetch_data("ECO_DF","economic_combination")
+
+# print(fetch_ftse100_all_components())
