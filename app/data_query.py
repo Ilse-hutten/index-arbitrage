@@ -35,4 +35,3 @@ def fetch_ftse100_index():
 def fetch_ftse100_all_components():
     return fetch_data("FTSE100", "FTSE100_all_components")
 
-print(fetch_ftse100_index())
