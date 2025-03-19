@@ -14,7 +14,7 @@ from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
 from typing import List
-
+from output import output
 #
 #-----Pulling data from Big Query
 #
