@@ -81,12 +81,13 @@ def fetch_btresult_rolling_pca(
 
     bt_result,rep_pf=compute_bt_result(cal_days,trade_days,n_stocks,window,
     n_pcs,thresholds,index_selected)
-
+    rep_pf.reset_index(inplace=True)
     data={
             "bt_result": json.loads(bt_result.to_json(orient="records", date_format="iso")),
             "rep_pf":  json.loads(rep_pf.to_json(orient="records", date_format="iso"))
 
         }
+    print(data)
     return JSONResponse(content=data)
 
 
