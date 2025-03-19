@@ -151,12 +151,12 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
         if dynamic:
             if row['direction']==1:
                 for day in range(1, trade_days-1):
-                    if row[f'Trading Day {day}'] > exit_threshold:
+                    if row[f'Trading Day {day}'] > thresholds[2]:
                         exit_day=day
                         break
             if row['direction']==-1:
                 for day in range(1, trade_days-1):
-                    if row[f'Trading Day {day}'] < exit_threshold:
+                    if row[f'Trading Day {day}'] < thresholds[0]:
                         exit_day=day
                         break
 
