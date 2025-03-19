@@ -144,6 +144,9 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
     z_scores_df['target return']=np.log(z_scores_df['target exit']/z_scores_df['target entry'])
     z_scores_df['replication return']=np.log(z_scores_df['replication exit']/z_scores_df['replication entry'])
 
+    z_scores_df['date']=weight_aligned['date']
+    z_scores_df=z_scores_df.set_index('date', drop=True)
+
     print(z_scores_df)
 
     return z_scores_df
