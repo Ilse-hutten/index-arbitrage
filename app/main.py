@@ -55,10 +55,14 @@ pca_weights_df=rep_pf
 #target_df=target_close_price
 cal_days=60                 # number of days for the z score
 trade_days=30               # maximum number of trading days
-thresholds=[0.5,2,-0.5,-2]  # thresholds for trading signals
+thresholds=[2,200,-2,-200]  # thresholds for trading signals
+                            # [short minimum threshold, short maximum threshold, long minimum threshold, long maximum threshold]
+exit_levels=[0.5,-0.5]      # thresholds for closing a trade
+                            # [exit level long position, exit level short position]
 
 #calling the simulation
-bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
+bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_levels, True)
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
 
+bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']

@@ -212,15 +212,6 @@ st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', un
 def fetch_data(dataset: str, table: str):
     """Fetch data from BigQuery dataset and table"""
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
-
-    client = bigquery.Client()  # Initialize BigQuery client
-    return client.query(query).to_dataframe()  # Run query and return DataFrame
-
-# ✅ Fetching functions for specific datasets
-# ✅ Function to Fetch Data from BigQuery
-def fetch_data(dataset: str, table: str):
-    """Fetch data from BigQuery dataset and table"""
-    query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
     client = bigquery.Client()
     return client.query(query).to_dataframe()
 
@@ -269,15 +260,15 @@ if submitted:
         processed_df = preprocessing_X(underlying_df)
 
         # 🎯 Step 2: Apply Rolling PCA & Get Stock Weights
-        def rolling_pca_weights(X_log, n_stocks, window, n_pcs):
+        def rolling_pca_weights(X_log, n_stocks, time_period, n_pcs):
             """Computes rolling PCA and returns a DataFrame with the final stock weights."""
             tickers = X_log.columns  # All stock tickers
-            selected_tickers = tickers[:n_stocks]  # Select the first `n_stocks`
+            selected_tickers = X_log.var().nlargest(n_stocks).index  # ✅ Select most volatile stocks
             results = []
 
             # Rolling PCA Calculation
-            for i in range(len(X_log) - window):
-                X_window = X_log.iloc[i : i + window, :n_stocks]  # Select the rolling window
+            for i in range(len(X_log) - time_period):
+                X_window = X_log.iloc[i : i + time_period][selected_tickers]  # Select the rolling window
                 pca = PCA(n_components=n_pcs)
                 pca.fit(X_window)
                 weights = pca.components_.T[:, 0]  # Select the first eigenvector
@@ -291,15 +282,48 @@ if submitted:
             return weights_df
 
         # 🎯 Step 3: Compute PCA Weights
-        rep_pf = rolling_pca_weights(processed_df, num_stocks, calibration_days, n_pcs=3)
+        rep_pf = rolling_pca_weights(processed_df, num_stocks, time_period, n_pcs=3)  # ✅ Fixed function call
+
+        # ✅ Step 4: Multiply Weights by Stock Prices to Compute Portfolio Value
+        stock_prices_df = underlying_df.set_index("date")  # Ensure date is index
+
+        # 🛠 **Align stock prices and weights**
+        selected_tickers = stock_prices_df.columns.intersection(rep_pf.columns)
+        stock_prices_df = stock_prices_df[selected_tickers]
+        rep_pf = rep_pf[selected_tickers]  # Keep only tickers present in both
+
+        # 🚨 **Ensure data is not empty before proceeding**
+        if stock_prices_df.empty or rep_pf.empty:
+            st.error("🚨 Missing data for portfolio computation. Try selecting different parameters.")
+            st.stop()
+
+        # 🛠 **Debugging Output: Check Shapes Before Multiplication**
+        st.write(f"Stock Prices Shape: {stock_prices_df.shape}")  # (num_dates, num_stocks)
+        st.write(f"Portfolio Weights Shape: {rep_pf.shape}")  # (1, num_stocks)
+
+        # ✅ Ensure `rep_pf_vector` has the correct shape
+        rep_pf_vector = rep_pf.iloc[0, :].squeeze()  # Convert to Series
+
+        st.write(f"Replicated Portfolio Vector Shape: {rep_pf_vector.shape}")  # Should be (num_stocks,)
+
+        # ✅ Perform matrix multiplication correctly
+        portfolio_values = stock_prices_df.dot(rep_pf_vector)
 
         # ✅ Display Results
         st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
         st.dataframe(rep_pf.style.format("{:.4f}"))  # Display with formatting
 
+        # ✅ Display Stock Weight Bar Chart
+        fig = px.bar(rep_pf.T, x=rep_pf.columns, y=0, title="PCA Portfolio Weights", labels={"0": "Weight"})
+        st.plotly_chart(fig)
+
+        # ✅ Plot Portfolio Value Over Time
+        fig2 = px.line(portfolio_values, x=portfolio_values.index, y=portfolio_values.values,
+                       title="Portfolio Value Over Time", labels={"y": "Portfolio Value"})
+        st.plotly_chart(fig2)
+
     else:
         st.error("🚨 No data available for this index. Try again.")
-
 
 # Section: Trading Strategy
 st.markdown("""
@@ -418,6 +442,7 @@ if st.button("Download Strategy as CSV"):
 
 # Final Note
 st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
+
 
 
 # st.title("Stat Arb!")
