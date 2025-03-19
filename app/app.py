@@ -271,10 +271,19 @@ with st.form(key='form_bigquery_selection'):
 if submitted:
     URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
 
-    response = requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":calibration_days,"n_pcs":n_pcs,"index_selected":selected_index})
-    st.write(response.json()["rep_pf"])
+    rep_pf = pd.DataFrame(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":calibration_days,"n_pcs":n_pcs,"index_selected":selected_index}).json()["rep_pf"])
+    # st.write(pd.DataFrame(rep_pf))
+    pca_date_str = str(pca_date)  # Convert Streamlit date input to string
+    pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
 
-
+    date = client.query('SELECT date FROM `lewagon-statistical-arbitrage.SP500.SP500_all_components` ORDER BY date').to_dataframe()
+    st.dataframe(date)
+    st.write(len(date))
+    st.write(len(rep_pf))
+    rep_pf['date'] = date["date"]
+    rep_pf.set_index("date", inplace=True)
+    rep_pf.index = pd.to_datetime(rep_pf.index)  # Ensure index is in datetime format
+    st.dataframe(rep_pf)
 
 #     with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
 #         # Fetch the correct dataset
