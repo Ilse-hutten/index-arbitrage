@@ -1,10 +1,13 @@
 import datetime
 import json
+from typing import List
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from data_querry  import  *
+from data_query import  *
 import pandas as pd
+from main import compute_bt_result
 app = FastAPI()
+
 
 
 
@@ -64,13 +67,24 @@ def get_dataset_name(name: str):
         return JSONResponse(content={"error": "Invalid dataset name."}, status_code=400)
 
 
-# @app.post('/get_pca')
-# def get_pca(days,time,n_stocks):
-#     return {}
+@app.get('/fetch_btresult_rolling_pca')
+def fetch_btresult_rolling_pca(
+    cal_days:int,
+    trade_days: int,
+    n_stocks:int,
+    window:int,
+    n_pcs:int,
+    thresholds: List[float] ,
+    index_selected):
 
-# @app.get('/test_bq')
-# def get_pca():
-#     index_df = fetch_ftse100_index()
-#     index_json = json.loads(index_df.to_json(orient="records", date_format="iso"))
+    bt_result,rep_pf=compute_bt_result(cal_days,trade_days,n_stocks,window,
+    n_pcs,
+    thresholds,
+    index_selected)
 
-#     return {"index": index_json}
+    data={
+            "bt_result": bt_result.to_dict(orient="records"),
+            "rep_pf": rep_pf.to_dict(orient="records")
+        }
+
+    return JSONResponse(content=data)
