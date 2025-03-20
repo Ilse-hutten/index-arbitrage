@@ -74,19 +74,23 @@ def fetch_btresult_rolling_pca(
     n_stocks:int,
     window:int,
     n_pcs:int,
-    thresholds:List[float] = Query([0.5, 2, -0.5, -2],description="Send in the order."),
+    thresholds:List[float] = Query([2, 200, -2, -200],description="Send in the order."),
+    exit_levels: List[float] =Query([-0.5,0.5]),
     index_selected:str='SP500',
 
     ):
 
-    bt_result,rep_pf=compute_bt_result(cal_days,trade_days,n_stocks,window,
-    n_pcs,thresholds,index_selected)
-
+    bt_result,rep_pf=compute_bt_result(cal_days=cal_days,trade_days=trade_days,
+                                       n_stocks=n_stocks,window=window,
+                                    n_pcs=n_pcs,thresholds=thresholds,exit_levels=exit_levels,
+                                    index_selected=index_selected,dynamic=True)
+    rep_pf.reset_index(inplace=True)
     data={
             "bt_result": json.loads(bt_result.to_json(orient="records", date_format="iso")),
             "rep_pf":  json.loads(rep_pf.to_json(orient="records", date_format="iso"))
 
         }
+    
     return JSONResponse(content=data)
 
 

@@ -8,6 +8,7 @@ import time
 import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
+from output import alternative_asset_return
 
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
@@ -16,7 +17,8 @@ credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"]
 )
 client = bigquery.Client(credentials=credentials)
-
+URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
+# URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
 
 # Set page title and layout
 # Set page title, layout, and icon
@@ -252,7 +254,7 @@ with st.form(key='form_bigquery_selection'):
     selected_index = st.selectbox("🔍 Choose an index to analyze:", list(index_options.keys()))
     pca_date = st.date_input("📅 Select Date for PCA Analysis")  # Interactive date input
     num_stocks = st.number_input("📈 Number of Stocks", min_value=10, max_value=60, value=20)
-    calibration_days = st.slider("📅 Select Number of Calibration Days (PCA Window)", min_value=30, max_value=90, value=60)
+    windows = st.slider("📅 Select Number of Calibration Days (PCA Window)", min_value=30, max_value=90, value=60)
     n_pcs = st.slider("🧮 Select Number of Principal Components (n_pcs)", min_value=1, max_value=10, value=3)
 
     # Submit button
@@ -260,89 +262,111 @@ with st.form(key='form_bigquery_selection'):
 
 # ✅ Fetch Data and Process PCA on Submission
 if submitted:
-    with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
-        # Fetch the correct dataset
-        underlying_df = index_options[selected_index]()
-        time.sleep(2)
+    # st.write(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json())
 
-    if not underlying_df.empty:
-        st.success(f"✅ Successfully loaded {selected_index} market data!")
+    rep_pf = pd.DataFrame(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json()["rep_pf"])
+    st.write(pd.DataFrame(rep_pf))
+    pca_date_str = str(pca_date)  # Convert Streamlit date input to string
+    pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
+    rep_pf.set_index('date', inplace=True)
+    rep_pf.index = pd.to_datetime(rep_pf.index)  # Ensure index is in datetime format
+    if pca_date in rep_pf.index:
+        rep_pf_for_date = rep_pf.loc[[pca_date]]  # Get weights for the specific date
 
-        # 🎯 Step 1: Preprocess Data
-        def preprocessing_X(df):
-            """Preprocesses the stock price data to log returns."""
-            df = df.set_index("date")
-            df.index = pd.to_datetime(df.index)  # Ensure index is in datetime format
-            df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
-            return df.dropna()
+        # Filter to only include stocks with weights > 0
+        filtered_rep_pf_for_date = rep_pf_for_date.loc[:, rep_pf_for_date.iloc[0] > 0]
 
-        processed_df = preprocessing_X(underlying_df)
+        # Format the date row index to display only the date (no time)
+        filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
 
-        # Ensure `pca_date` is a valid datetime object
-        pca_date_str = str(pca_date)  # Convert Streamlit date input to string
-        pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
-
-        # 🎯 Step 2: Apply Rolling PCA for the Selected Date
-        if pca_date in processed_df.index:
-            # Use the existing `rolling_pca_weights` function
-            rep_pf = rolling_pca_weights(
-                X_log=processed_df,           # Log returns DataFrame
-                n_stocks=num_stocks,          # Number of stocks
-                window_pca=calibration_days,  # PCA window (selected via slider)
-                n_pcs=n_pcs                   # Number of principal components (selected via slider)
-            )
-
-            # Filter weights for the selected PCA date
-            if pca_date in rep_pf.index:
-                rep_pf_for_date = rep_pf.loc[[pca_date]]  # Get weights for the specific date
-
-                # Filter to only include stocks with weights > 0
-                filtered_rep_pf_for_date = rep_pf_for_date.loc[:, rep_pf_for_date.iloc[0] > 0]
-
-                # Format the date row index to display only the date (no time)
-                filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
-
-                # ✅ Display Results
-                st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
-                st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
-            else:
-                st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
-        else:
-            st.error(f"🚨 Selected date {pca_date.date()} not found in the dataset. Try another date.")
+        # ✅ Display Results
+        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+        st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
     else:
-        st.error("🚨 No data available for this index. Try again.")
+        st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
+#     with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
+#         # Fetch the correct dataset
+#         underlying_df = index_options[selected_index]()
+#         time.sleep(2)
+
+#     if not underlying_df.empty:
+#         st.success(f"✅ Successfully loaded {selected_index} market data!")
+
+#         # 🎯 Step 1: Preprocess Data
+#         def preprocessing_X(df):
+#             """Preprocesses the stock price data to log returns."""
+#             df = df.set_index("date")
+#             df.index = pd.to_datetime(df.index)  # Ensure index is in datetime format
+#             df = df.apply(lambda x: np.log(x) - np.log(x.shift(1)))  # Log returns
+#             return df.dropna()
+
+#         processed_df = preprocessing_X(underlying_df)
+
+#         # Ensure `pca_date` is a valid datetime object
+#         pca_date_str = str(pca_date)  # Convert Streamlit date input to string
+#         pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
+
+#         # 🎯 Step 2: Apply Rolling PCA for the Selected Date
+#         if pca_date in processed_df.index:
+#             # Use the existing `rolling_pca_weights` function
+#             rep_pf = rolling_pca_weights(
+#                 X_log=processed_df,           # Log returns DataFrame
+#                 n_stocks=num_stocks,          # Number of stocks
+#                 window_pca=calibration_days,  # PCA window (selected via slider)
+#                 n_pcs=n_pcs                   # Number of principal components (selected via slider)
+#             )
+
+#             # Filter weights for the selected PCA date
+#             if pca_date in rep_pf.index:
+#                 rep_pf_for_date = rep_pf.loc[[pca_date]]  # Get weights for the specific date
+
+#                 # Filter to only include stocks with weights > 0
+#                 filtered_rep_pf_for_date = rep_pf_for_date.loc[:, rep_pf_for_date.iloc[0] > 0]
+
+#                 # Format the date row index to display only the date (no time)
+#                 filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
+
+#                 # ✅ Display Results
+#                 st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+#                 st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
+#             else:
+#                 st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
+#         else:
+#             st.error(f"🚨 Selected date {pca_date.date()} not found in the dataset. Try another date.")
+#     else:
+#         st.error("🚨 No data available for this index. Try again.")
 
 
-st.write(filtered_rep_pf_for_date.T)
-# Section: Trading Strategy
-st.markdown("""
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0px); }
-        }
+# # st.write(filtered_rep_pf_for_date.T)
+# # Section: Trading Strategy
+# st.markdown("""
+#     <style>
+#         @keyframes fadeIn {
+#             from { opacity: 0; transform: translateY(-10px); }
+#             to { opacity: 1; transform: translateY(0px); }
+#         }
 
-        .strategy-header {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(90deg, #00b09b, #96c93d);
-            border-radius: 10px;
-            color: white;
-            font-size: 1.8em;
-            font-weight: bold;
-            animation: fadeIn 1s ease-in-out;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-        }
+#         .strategy-header {
+#             text-align: center;
+#             padding: 15px;
+#             background: linear-gradient(90deg, #00b09b, #96c93d);
+#             border-radius: 10px;
+#             color: white;
+#             font-size: 1.8em;
+#             font-weight: bold;
+#             animation: fadeIn 1s ease-in-out;
+#             box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+#         }
 
-        .strategy-description {
-            font-size: 1.2em;
-            text-align: center;
-            color: #444444;
-            padding: 10px;
-            animation: fadeIn 1.5s ease-in-out;
-        }
-    </style>
-""", unsafe_allow_html=True)
+#         .strategy-description {
+#             font-size: 1.2em;
+#             text-align: center;
+#             color: #444444;
+#             padding: 10px;
+#             animation: fadeIn 1.5s ease-in-out;
+#         }
+#     </style>
+# """, unsafe_allow_html=True)
 
 # 🎯 Animated Section Header
 st.markdown('<div class="strategy-header">📊 Trading Strategy Execution</div>', unsafe_allow_html=True)
@@ -361,36 +385,136 @@ st.write("""
 - Z-score thresholds can be amended to optimize trading opportunities
 """)
 
-# 🎯 Animated Section Header
-st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', unsafe_allow_html=True)
 
-# Simulated Strategy Output Graph
-st.subheader("Strategy Output Graph")
-output_data = pd.DataFrame(np.cumsum(np.random.randn(100)), columns=["Cumulative Returns"])
-fig_output = px.line(output_data, y="Cumulative Returns", title="Simulated Performance of Trading Strategy versus Market Index")
-st.plotly_chart(fig_output)
+# 📊 Interactive Parameter Selection
+with st.form(key='form_zscore_selection'):
+    # 🎛 Slider for Calibration Days
+    calibration_days = st.slider(
+        "📅 Select Number of Calibration Days (Z-score calculation)",
+        min_value=30, max_value=90, value=60
+    )
+
+    # # 🎛 Radio Buttons for Z-Score Thresholds
+    # zscore_thresholds = st.radio(
+    #     "📈 Select Z-Score Thresholds for Entering a Trade:",
+    #     options=[
+    #         (-2, 2),  # Option 1: -2 and 2
+    #         (-1.5, 1.5)  # Option 2: -1.5 and 1.5
+    #     ],
+    #     index=0  # Default to (-2, 2)
+    # )
+    # zscore_thresholds = list(zscore_thresholds)
+    # Fixed Threshold Information
+    st.markdown("""
+    - 🚨 **Note:** Positions will always close when the Z-score rises above -0.5 or falls below 0.5
+    """, unsafe_allow_html=True)
+
+    # Submit Button
+    submitted = st.form_submit_button("✅ Confirm Parameters")
+
+# ✅ Display Selected Parameters After Submission
+if submitted:
+    with st.spinner("Processing your selection..."):
+        time.sleep(1)  # Simulating processing time
+    result = requests.get(URL, params={"cal_days":calibration_days, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index})
+    st.write(result)
+    bt_result = pd.DataFrame(result.json()["bt_result"])
+
+    st.success(f"🎯 Calibration Days: {calibration_days}")
+    #st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
+    #st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
+    st.dataframe(bt_result)
+    # Optionally: Display next steps or instructions
+    st.markdown("""
+        The selected parameters are ready to be applied to your trading strategy.
+        Adjust calibration days and entry thresholds dynamically to find optimal performance!
+    """)
+
+    st_output = alternative_asset_return(bt_result)
+    st.dataframe(st_output)
+
+    #Simulated Strategy Output Graph
+    st.subheader("Strategy Output Graph")
+    output_data = pd.DataFrame(st_output)
+    # Convert to DataFrame and reset index
+    #output_data = pd.DataFrame(st_output).reset_index()  # Ensures index is a column
+    # Create line plot with two lines
+    fig_output = px.line(output_data, x="index",
+                     y=["target entry", "strategy"],
+                     title="Simulated Performance: Target Entry vs Strategy",
+                     labels={"index": "Time", "value": "Returns"},
+                     color_discrete_map={"Target Entry": "blue", "Strategy": "red"})  # Custom colors
+
+    # Display the plot
+    st.plotly_chart(fig_output)
+
+    # Count occurrences of -1 and 1 in the "direction" column
+    count_negative_one = (st_output["direction"] == -1).sum()
+    count_positive_one = (st_output["direction"] == 1).sum()
+
+    # Sum excess return and daily target return
+    total_excess_return = st_output["excess return"].sum()
+    total_daily_target_return = st_output["daily target return"].sum()
+
+    # Create a summary DataFrame
+    summary_df = pd.DataFrame({
+        "Metric": ["Count of -1", "Count of 1", "Total Excess Return", "Total Daily Target Return"],
+        "Value": [count_negative_one, count_positive_one, total_excess_return, total_daily_target_return]
+    })
+
+    # Title
+    st.title("📊 Strategy Metrics Dashboard")
+
+    # Add some styling
+    st.markdown(
+        """
+        <style>
+        .big-font {
+            font-size:30px !important;
+            font-weight: bold;
+            text-align: center;
+        }
+        .metric-box {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            font-size: 20px;
+            background-color: #f9f9f9;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Display metrics in nice format
+    st.markdown('<p class="big-font">🚀 Summary Metrics</p>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
+
+    col1.markdown(f'<div class="metric-box">📉 <b>Count of -1</b><br>{count_negative_one}</div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="metric-box">📈 <b>Count of 1</b><br>{count_positive_one}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">💰 <b>Total Excess Return</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
+    col4.markdown(f'<div class="metric-box">📊 <b>Total Daily Target Return</b><br>{total_daily_target_return:.4f}</div>', unsafe_allow_html=True)
+
+    # Display DataFrame in a nice table format
+    st.markdown("### 📋 Detailed Summary Table")
+    st.dataframe(summary_df.style.format({"Value": "{:.4f}"}))
+
 
 # 📊 Key Findings
-st.subheader("📊 Key Findings")
-st.write("""
-- Statistical Arbitrage leverages inefficiencies in market pricing to identify profitable opportunities
-- PCA (Principal Component Analysis) identifies a **replication portfolio** composed of stocks that most explain the variability in the market index. This replication portfolio serves as the foundation for our trading strategy
-- By calculating the spread between the log returns of the replication portfolio and the index, trade signals can be generated to exploit potential arbitrage opportunities
-- Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
-""")
+# st.subheader("📊 Key Findings")
+# st.write("""
+# - Statistical Arbitrage leverages inefficiencies in market pricing to identify profitable opportunities
+# - PCA (Principal Component Analysis) identifies a **replication portfolio** composed of stocks that most explain the variability in the market index. This replication portfolio serves as the foundation for our trading strategy
+# - By calculating the spread between the log returns of the replication portfolio and the index, trade signals can be generated to exploit potential arbitrage opportunities
+# - Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
+# """)
 
-# Section: Download Strategy
-st.subheader("📥 Download Your Strategy")
-if st.button("Download Strategy as CSV"):
-    strategy_data = pd.DataFrame({
-        "Parameter": ["Time Period", "Calibration Days", "Number of Stocks"],
-        "Value": [time_period, calibration_days, num_stocks]
-    })
-    strategy_data.to_csv("strategy_output.csv", index=False)
-    st.success("Your strategy has been downloaded!")
-
-# Final Note
-st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
+# # Final Note
+# st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
 
 
 

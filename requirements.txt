@@ -1,12 +1,13 @@
 requests
 pandas
 numpy
-tensorflow
+
 scikit-learn
 google-cloud-bigquery
 google-auth
 pandas-gbq
 db-dtypes
+google-cloud
 google-cloud-bigquery-storage
 pytest
 pylint
@@ -25,4 +26,3 @@ joblib
 plotly
 streamlit_extras
 streamlit
-
