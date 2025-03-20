@@ -13,8 +13,12 @@ from data_query import fetch_ftse100_all_components
 from PCA_function import rolling_pca_weights
 from preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
+from output import alternative_asset_return
+import seaborn as sns
+import math
 from typing import List
 from output import output
+
 #
 #-----Pulling data from Big Query
 #
@@ -59,12 +63,24 @@ cal_days=60                 # number of days for the z score
 trade_days=30               # maximum number of trading days
 thresholds=[2,200,-2,-200]  # thresholds for trading signals
                             # [short minimum threshold, short maximum threshold, long minimum threshold, long maximum threshold]
-exit_levels=[0.5,-0.5]      # thresholds for closing a trade
+exit_levels=[0,0]           # thresholds for closing a trade
                             # [exit level long position, exit level short position]
 
 #calling the simulation
 bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_levels, True)
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
+
+def output(bt_results):
+    bt_to_API=pd.DataFrame(bt_result['direction'] * (bt_result['target return']-bt_result['replication return']))
+    bt_to_API.columns=['log return by trade']
+    pd.concat(bt_to_API, bt_result['direction'])
+
+
+    bt_to_API['capital']=100
+    for i, row in bt_to_API.iterrows():
+        bt_to_API.loc[i+1,'capital']=bt_to_API.loc[i,'capital']*math.exp(bt_to_API.loc[i,'log return by trade'])
+
+    return bt_to_API
 
 bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
@@ -77,7 +93,7 @@ def compute_bt_result(
     n_stocks:int,
     window:int,
     n_pcs:int,
-    thresholds: List[float] =[0.5, 2, -0.5, -2],
+    thresholds: List[float] =[2,200, -2, -200],
     index_selected='SP500'):
     ('starting')
     if index_selected=='NASDAQ100':

@@ -140,6 +140,10 @@ def z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_da
 
         z_scores_df.loc[i, 'replication exit']=replications_df.loc[i, f'Trading Day {exit_day}']
         z_scores_df.loc[i, 'target exit']=target_match_df.loc[i, f'Trading Day {exit_day}']
+        if z_scores_df.loc[i, 'direction']!=0:
+            z_scores_df.loc[i, 'exit day']=exit_day
+        else:
+            z_scores_df.loc[i, 'exit day']=0
 
     z_scores_df['target return']=np.log(z_scores_df['target exit']/z_scores_df['target entry'])
     z_scores_df['replication return']=np.log(z_scores_df['replication exit']/z_scores_df['replication entry'])
