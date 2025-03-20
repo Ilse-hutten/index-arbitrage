@@ -18,6 +18,7 @@ import seaborn as sns
 import math
 from typing import List
 from output import output
+from fastapi import FastAPI, Query
 
 #
 #-----Pulling data from Big Query
@@ -94,7 +95,9 @@ def compute_bt_result(
     window:int,
     n_pcs:int,
     thresholds: List[float] =[2,200, -2, -200],
-    index_selected='SP500'):
+    index_selected='SP500',
+    exit_levels:List[float] =Query([-0.5,0.5]),
+    dynamic=True):
     ('starting')
     if index_selected=='NASDAQ100':
         target_df= fetch_NASDAQ100_index()
@@ -110,6 +113,7 @@ def compute_bt_result(
     print('data processed')
     rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
 
-    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, trade_days, thresholds,exit_levels, dynamic=True)
+    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, 
+                                trade_days, thresholds,exit_levels, dynamic)
     print('rec')
     return bt_result,rep_pf

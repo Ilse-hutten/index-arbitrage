@@ -18,6 +18,7 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 client = bigquery.Client(credentials=credentials)
 URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
+# URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
 
 # Set page title and layout
 # Set page title, layout, and icon
@@ -270,10 +271,10 @@ with st.form(key='form_bigquery_selection'):
 
 # ✅ Fetch Data and Process PCA on Submission
 if submitted:
-
+    # st.write(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json())
 
     rep_pf = pd.DataFrame(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json()["rep_pf"])
-    # st.write(pd.DataFrame(rep_pf))
+    st.write(pd.DataFrame(rep_pf))
     pca_date_str = str(pca_date)  # Convert Streamlit date input to string
     pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
     rep_pf.set_index('date', inplace=True)
@@ -521,15 +522,7 @@ st.write("""
 - Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
 """)
 
-# Section: Download Strategy
-st.subheader("📥 Download Your Strategy")
-if st.button("Download Strategy as CSV"):
-    strategy_data = pd.DataFrame({
-        "Parameter": ["Time Period", "Calibration Days", "Number of Stocks"],
-        "Value": [time_period, calibration_days, num_stocks]
-    })
-    strategy_data.to_csv("strategy_output.csv", index=False)
-    st.success("Your strategy has been downloaded!")
+
 
 # Final Note
 st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
