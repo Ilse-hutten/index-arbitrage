@@ -8,6 +8,7 @@ import time
 import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
+from output import alternative_asset_return
 
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
@@ -401,16 +402,16 @@ with st.form(key='form_zscore_selection'):
         min_value=30, max_value=90, value=60
     )
 
-    # 🎛 Radio Buttons for Z-Score Thresholds
-    zscore_thresholds = st.radio(
-        "📈 Select Z-Score Thresholds for Entering a Trade:",
-        options=[
-            (-2, 2),  # Option 1: -2 and 2
-            (-1.5, 1.5)  # Option 2: -1.5 and 1.5
-        ],
-        index=0  # Default to (-2, 2)
-    )
-    zscore_thresholds = list(zscore_thresholds)
+    # # 🎛 Radio Buttons for Z-Score Thresholds
+    # zscore_thresholds = st.radio(
+    #     "📈 Select Z-Score Thresholds for Entering a Trade:",
+    #     options=[
+    #         (-2, 2),  # Option 1: -2 and 2
+    #         (-1.5, 1.5)  # Option 2: -1.5 and 1.5
+    #     ],
+    #     index=0  # Default to (-2, 2)
+    # )
+    # zscore_thresholds = list(zscore_thresholds)
     # Fixed Threshold Information
     st.markdown("""
     - 🚨 **Note:** Positions will always close when the Z-score rises above -0.5 or falls below 0.5
@@ -428,8 +429,8 @@ if submitted:
     bt_result = pd.DataFrame(result.json()["bt_result"])
 
     st.success(f"🎯 Calibration Days: {calibration_days}")
-    st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
-    st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
+    #st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
+    #st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
     st.dataframe(bt_result)
     # Optionally: Display next steps or instructions
     st.markdown("""
@@ -437,14 +438,79 @@ if submitted:
         Adjust calibration days and entry thresholds dynamically to find optimal performance!
     """)
 
-# 🎯 Animated Section Header
-st.markdown('<div class="section-header">⚙️ Select Parameters PCA</div>', unsafe_allow_html=True)
+    st_output = alternative_asset_return(bt_result)
+    st.dataframe(st_output)
 
-# Simulated Strategy Output Graph
-st.subheader("Strategy Output Graph")
-output_data = pd.DataFrame(np.cumsum(np.random.randn(100)), columns=["Cumulative Returns"])
-fig_output = px.line(output_data, y="Cumulative Returns", title="Simulated Performance of Trading Strategy versus Market Index")
-st.plotly_chart(fig_output)
+    #Simulated Strategy Output Graph
+    st.subheader("Strategy Output Graph")
+    output_data = pd.DataFrame(st_output)
+    # Convert to DataFrame and reset index
+    #output_data = pd.DataFrame(st_output).reset_index()  # Ensures index is a column
+    # Create line plot with two lines
+    fig_output = px.line(output_data, x="index",
+                     y=["target entry", "strategy"],
+                     title="Simulated Performance: Target Entry vs Strategy",
+                     labels={"index": "Time", "value": "Returns"},
+                     color_discrete_map={"Target Entry": "blue", "Strategy": "red"})  # Custom colors
+
+    # Display the plot
+    st.plotly_chart(fig_output)
+
+    # Count occurrences of -1 and 1 in the "direction" column
+    count_negative_one = (st_output["direction"] == -1).sum()
+    count_positive_one = (st_output["direction"] == 1).sum()
+
+    # Sum excess return and daily target return
+    total_excess_return = st_output["excess return"].sum()
+    total_daily_target_return = st_output["daily target return"].sum()
+
+    # Create a summary DataFrame
+    summary_df = pd.DataFrame({
+        "Metric": ["Count of -1", "Count of 1", "Total Excess Return", "Total Daily Target Return"],
+        "Value": [count_negative_one, count_positive_one, total_excess_return, total_daily_target_return]
+    })
+
+    # Title
+    st.title("📊 Strategy Metrics Dashboard")
+
+    # Add some styling
+    st.markdown(
+        """
+        <style>
+        .big-font {
+            font-size:30px !important;
+            font-weight: bold;
+            text-align: center;
+        }
+        .metric-box {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            font-size: 20px;
+            background-color: #f9f9f9;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Display metrics in nice format
+    st.markdown('<p class="big-font">🚀 Summary Metrics</p>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
+
+    col1.markdown(f'<div class="metric-box">📉 <b>Count of -1</b><br>{count_negative_one}</div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="metric-box">📈 <b>Count of 1</b><br>{count_positive_one}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">💰 <b>Total Excess Return</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
+    col4.markdown(f'<div class="metric-box">📊 <b>Total Daily Target Return</b><br>{total_daily_target_return:.4f}</div>', unsafe_allow_html=True)
+
+    # Display DataFrame in a nice table format
+    st.markdown("### 📋 Detailed Summary Table")
+    st.dataframe(summary_df.style.format({"Value": "{:.4f}"}))
+
 
 # 📊 Key Findings
 st.subheader("📊 Key Findings")

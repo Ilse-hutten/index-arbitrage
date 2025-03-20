@@ -93,7 +93,7 @@ def compute_bt_result(
     n_stocks:int,
     window:int,
     n_pcs:int,
-    thresholds: List[float] =[0.5, 2, -0.5, -2],
+    thresholds: List[float] =[2,200, -2, -200],
     index_selected='SP500'):
     ('starting')
     if index_selected=='NASDAQ100':
