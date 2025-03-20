@@ -9,7 +9,7 @@ import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
 from output import alternative_asset_return
-
+import datetime
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
 
@@ -261,7 +261,7 @@ index_options = {
 # 📊 Interactive Index Selection in Streamlit
 with st.form(key='form_bigquery_selection'):
     selected_index = st.selectbox("🔍 Choose an index to analyze:", list(index_options.keys()))
-    pca_date = st.date_input("📅 Select Date for PCA Analysis")  # Interactive date input
+    pca_date = st.date_input("📅 Select Date for PCA Analysis", value=datetime.date(2025, 1, 14))  # Interactive date input
     num_stocks = st.number_input("📈 Number of Stocks", min_value=10, max_value=60, value=20)
     windows = st.slider("📅 Select Number of Calibration Days (PCA Window)", min_value=30, max_value=90, value=60)
     n_pcs = st.slider("🧮 Select Number of Principal Components (n_pcs)", min_value=1, max_value=10, value=3)
@@ -289,10 +289,35 @@ if submitted:
         filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
 
         # ✅ Display Results
-        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks for the day you choose.")
         st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
     else:
         st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
+
+    df_numeric = filtered_rep_pf_for_date.drop(columns=["date"], errors="ignore").T
+    df_numeric.columns = ["Stock Value"]  # Rename the column for clarity
+    df_numeric.reset_index(inplace=True)  # Convert index to a column
+    df_numeric.rename(columns={"index": "Stock Symbol"}, inplace=True)
+
+    # Create an interactive bar chart with Plotly
+    fig = px.bar(
+        df_numeric,
+        x="Stock Symbol",
+        y="Stock Value",
+        title="Stock Values Bar Chart",
+        labels={"Stock Value": "Value", "Stock Symbol": "Stock"},
+        color="Stock Value",  # Optional: Color bars based on value
+        text="Stock Value",   # Display values on bars
+    )
+
+    # Update layout for better readability
+    fig.update_traces(texttemplate='%{text:.4f}', textposition="outside")
+    fig.update_layout(xaxis_tickangle=-45)  # Rotate x-axis labels
+
+    # Display the plot in Streamlit
+    st.plotly_chart(fig)
+
+
 #     with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
 #         # Fetch the correct dataset
 #         underlying_df = index_options[selected_index]()
@@ -426,13 +451,12 @@ if submitted:
     with st.spinner("Processing your selection..."):
         time.sleep(1)  # Simulating processing time
     result = requests.get(URL, params={"cal_days":calibration_days, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index})
-    st.write(result)
     bt_result = pd.DataFrame(result.json()["bt_result"])
 
     st.success(f"🎯 Calibration Days: {calibration_days}")
     #st.success(f"🎯 Z-Score Entry Thresholds: {zscore_thresholds[0]} and {zscore_thresholds[1]}")
     #st.success("🎯 Position Exit Thresholds: Always fixed at -0.5 and 0.5")
-    st.dataframe(bt_result)
+    #st.dataframe(bt_result)
     # Optionally: Display next steps or instructions
     st.markdown("""
         The selected parameters are ready to be applied to your trading strategy.
@@ -440,6 +464,7 @@ if submitted:
     """)
 
     st_output = alternative_asset_return(bt_result)
+    st_output["Total Strategy return"] = np.log(st_output["strategy"]/st_output["strategy"].shift(1))
     st.dataframe(st_output)
 
     #Simulated Strategy Output Graph
@@ -462,13 +487,14 @@ if submitted:
     count_positive_one = (st_output["direction"] == 1).sum()
 
     # Sum excess return and daily target return
-    total_excess_return = st_output["excess return"].sum()
-    total_daily_target_return = st_output["daily target return"].sum()
+    total_strtategy_return = st_output["Total Strategy return"].sum()*100
+    total_daily_target_return = st_output["daily target return"].sum()*100
+    total_excess_return = st_output["excess return"].sum()*100
 
     # Create a summary DataFrame
     summary_df = pd.DataFrame({
-        "Metric": ["Count of -1", "Count of 1", "Total Excess Return", "Total Daily Target Return"],
-        "Value": [count_negative_one, count_positive_one, total_excess_return, total_daily_target_return]
+        "Metric": ["Count of -1", "Count of 1", "Replication Strategy", "Target index Return", "Excess Return"],
+        "Value": [count_negative_one, count_positive_one, total_strtategy_return, total_daily_target_return,total_excess_return]
     })
 
     # Title
@@ -503,14 +529,15 @@ if submitted:
     col1, col2 = st.columns(2)
     col3, col4 = st.columns(2)
 
-    col1.markdown(f'<div class="metric-box">📉 <b>Count of -1</b><br>{count_negative_one}</div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="metric-box">📈 <b>Count of 1</b><br>{count_positive_one}</div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="metric-box">💰 <b>Total Excess Return</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
+    col1.markdown(f'<div class="metric-box">📉 <b>Number of Short Trades </b><br>{count_negative_one}</div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="metric-box">📈 <b>Number of Long Trades</b><br>{count_positive_one}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">💰 <b>total Strategy Return</b><br>{total_strtategy_return:.4f}</div>', unsafe_allow_html=True)
     col4.markdown(f'<div class="metric-box">📊 <b>Total Daily Target Return</b><br>{total_daily_target_return:.4f}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">📊 <b>Total Excess Return</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
 
-    # Display DataFrame in a nice table format
-    st.markdown("### 📋 Detailed Summary Table")
-    st.dataframe(summary_df.style.format({"Value": "{:.4f}"}))
+    # # Display DataFrame in a nice table format
+    # st.markdown("### 📋 Detailed Summary Table")
+    # st.dataframe(summary_df.style.format({"Value": "{:.4f}"}))
 
 
 # 📊 Key Findings
@@ -524,7 +551,6 @@ if submitted:
 
 # # Final Note
 # st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
-
 
 
 ####bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, dynamic=False)
