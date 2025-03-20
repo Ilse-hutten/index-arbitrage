@@ -17,8 +17,8 @@ credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"]
 )
 client = bigquery.Client(credentials=credentials)
-#URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
-URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
+URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
+# URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
 
 # Set page title and layout
 # Set page title, layout, and icon
