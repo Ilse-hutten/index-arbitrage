@@ -70,19 +70,19 @@ exit_levels=[0,0]           # thresholds for closing a trade
 bt_result=z_score_trading(pca_weights_df, underlying_df, target_df, cal_days, trade_days, thresholds, exit_levels, True)
 #bt_result.to_csv(cwd + "/data/backtesting.csv")
 
-def output(bt_results):
-    bt_to_API=pd.DataFrame(bt_result['direction'] * (bt_result['target return']-bt_result['replication return']))
-    bt_to_API.columns=['log return by trade']
-    pd.concat(bt_to_API, bt_result['direction'])
+# def output(bt_results):
+#     bt_to_API=pd.DataFrame(bt_result['direction'] * (bt_result['target return']-bt_result['replication return']))
+#     bt_to_API.columns=['log return by trade']
+#     pd.concat(bt_to_API, bt_result['direction'])
 
 
-    bt_to_API['capital']=100
-    for i, row in bt_to_API.iterrows():
-        bt_to_API.loc[i+1,'capital']=bt_to_API.loc[i,'capital']*math.exp(bt_to_API.loc[i,'log return by trade'])
+#     bt_to_API['capital']=100
+#     for i, row in bt_to_API.iterrows():
+#         bt_to_API.loc[i+1,'capital']=bt_to_API.loc[i,'capital']*math.exp(bt_to_API.loc[i,'log return by trade'])
 
-    return bt_to_API
+#     return bt_to_API
 
-bt_to_API=output(bt_result)
+# bt_to_API=output(bt_result)
 # needs to be called to the API bt_result['spread']
 #bt_results: return, when you enter a trade
 
