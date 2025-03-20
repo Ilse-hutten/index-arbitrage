@@ -75,7 +75,7 @@ def fetch_btresult_rolling_pca(
     window:int,
     n_pcs:int,
     thresholds:List[float] = Query([2, 200, -2, -200],description="Send in the order."),
-    exit_levels: List[float] =[-0.5,0.5],
+    exit_levels: List[float] =Query([-0.5,0.5]),
     index_selected:str='SP500',
 
     ):
@@ -88,7 +88,6 @@ def fetch_btresult_rolling_pca(
             "rep_pf":  json.loads(rep_pf.to_json(orient="records", date_format="iso"))
 
         }
-    print(data)
     return JSONResponse(content=data)
 
 
