@@ -514,18 +514,16 @@ if submitted:
 
 
 # 📊 Key Findings
-st.subheader("📊 Key Findings")
-st.write("""
-- Statistical Arbitrage leverages inefficiencies in market pricing to identify profitable opportunities
-- PCA (Principal Component Analysis) identifies a **replication portfolio** composed of stocks that most explain the variability in the market index. This replication portfolio serves as the foundation for our trading strategy
-- By calculating the spread between the log returns of the replication portfolio and the index, trade signals can be generated to exploit potential arbitrage opportunities
-- Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
-""")
+# st.subheader("📊 Key Findings")
+# st.write("""
+# - Statistical Arbitrage leverages inefficiencies in market pricing to identify profitable opportunities
+# - PCA (Principal Component Analysis) identifies a **replication portfolio** composed of stocks that most explain the variability in the market index. This replication portfolio serves as the foundation for our trading strategy
+# - By calculating the spread between the log returns of the replication portfolio and the index, trade signals can be generated to exploit potential arbitrage opportunities
+# - Performance is influenced by factors such as the choice of index, PCA input parameters, and threshold tuning
+# """)
 
-
-
-# Final Note
-st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
+# # Final Note
+# st.info("💡 *'Just holding might be the better method if you want to keep it simple.'*")
 
 
 
