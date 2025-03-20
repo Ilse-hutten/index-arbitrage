@@ -30,4 +30,10 @@ def fetch_ftse100_all_components():
 def eco_df():
     return fetch_data("ECO_DF","economic_combination")
 
+def fetch_CRYPTO_index():
+    return fetch_data("CRYPTO", "CRYPTO_INDEX")
+
+def fetch_CRYPTO_all_components():
+    return fetch_data("CRYPTO", "CRYPTO_ALL_COMPONENTS")
+
 # print(fetch_ftse100_all_components())

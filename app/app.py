@@ -13,29 +13,18 @@ import datetime
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
 
+st.set_page_config(
+    page_title="📊 Statistical Arbitrage Strategy 🚀",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"]
 )
 client = bigquery.Client(credentials=credentials)
 URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
 # URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
-
-# Set page title and layout
-# Set page title, layout, and icon
-st.set_page_config(
-    page_title="📊 Statistical Arbitrage Strategy 🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-FASTAPI_BASE_URL = ""
-
-
-# ENDPOINTS = {
-#     "Index Data": f"{FASTAPI_BASE_URL}/get_market_data",
-#     "Live Stock Prices": f"{FASTAPI_BASE_URL}/get_live_prices",
-#     "Trading Signals": f"{FASTAPI_BASE_URL}/get_trading_signals"
-# }
-
 
 # Custom CSS for animations & styling
 st.markdown("""
@@ -121,11 +110,15 @@ def fetch_SP500_index():
 def fetch_ftse100_index():
     return fetch_data("FTSE100", "FTSE100_index", "FTSE100")
 
+def fetch_CRYPTO_index():
+    return fetch_data("CRYPTO", "CRYPTO_INDEX")
+
 # ✅ Dictionary to Map User Selection to BigQuery Functions
 index_options = {
     "FTSE100": fetch_ftse100_index,
     "NASDAQ100": fetch_NASDAQ100_index,
-    "SP500": fetch_SP500_index
+    "SP500": fetch_SP500_index,
+    "CRYPTO": fetch_CRYPTO_index
 }
 
 # 📊 Interactive Index Selection in Streamlit
@@ -242,11 +235,15 @@ def fetch_SP500_all_components():
 def fetch_ftse100_all_components():
     return fetch_data("FTSE100", "FTSE100_all_components")
 
+def fetch_CRYPTO_all_components():
+    return fetch_data("CRYPTO", "CRYPTO_ALL_COMPONENTS")
+
 # ✅ Dictionary to Map User Selection to Fetching Functions
 index_options = {
     "FTSE100": fetch_ftse100_all_components,
     "NASDAQ100": fetch_NASDAQ100_all_components,
-    "SP500": fetch_SP500_all_components
+    "SP500": fetch_SP500_all_components,
+    "CRYPTO":fetch_CRYPTO_all_components
 }
 
 # 📊 Interactive Index Selection in Streamlit
@@ -522,9 +519,9 @@ if submitted:
 
     col1.markdown(f'<div class="metric-box">📉 <b>Number of Short Trades </b><br>{count_negative_one}</div>', unsafe_allow_html=True)
     col2.markdown(f'<div class="metric-box">📈 <b>Number of Long Trades</b><br>{count_positive_one}</div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="metric-box">💰 <b>total Strategy Return</b><br>{total_strtategy_return:.4f}</div>', unsafe_allow_html=True)
-    col4.markdown(f'<div class="metric-box">📊 <b>Total Daily Target Return</b><br>{total_daily_target_return:.4f}</div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="metric-box">📊 <b>Total Excess Return</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">💰 <b>Our Strategy Return %</b><br>{total_strtategy_return:.4f}</div>', unsafe_allow_html=True)
+    col4.markdown(f'<div class="metric-box">📊 <b>Total Daily Target Return %</b><br>{total_daily_target_return:.4f}</div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-box">📊 <b>Total Excess Return %</b><br>{total_excess_return:.4f}</div>', unsafe_allow_html=True)
 
     # # Display DataFrame in a nice table format
     # st.markdown("### 📋 Detailed Summary Table")
