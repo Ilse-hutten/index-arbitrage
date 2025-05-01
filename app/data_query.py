@@ -5,11 +5,18 @@ from dotenv import load_dotenv
 load_dotenv()  # Automatically loads variables from the .env file
 
 # Build credentials from environment variables
+# Read and process ONCE
+raw_private_key = os.getenv("private_key")
+if raw_private_key and "\\n" in raw_private_key:
+    private_key = raw_private_key.replace("\\n", "\n")
+else:
+    private_key = raw_private_key
+
 credentials_info = {
     "type": "service_account",
     "project_id": os.getenv("project_id"),
     "private_key_id": os.getenv("private_key_id"),
-    "private_key": os.getenv("private_key").replace("\\n", "\n"),
+    "private_key": private_key,
     "client_email": os.getenv("client_email"),
     "client_id": os.getenv("client_id"),
     "auth_uri": os.getenv("auth_uri"),
