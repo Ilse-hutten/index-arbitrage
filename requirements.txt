@@ -26,3 +26,4 @@ joblib
 plotly
 streamlit_extras
 streamlit
+python-dotenv
