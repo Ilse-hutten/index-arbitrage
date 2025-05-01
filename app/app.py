@@ -12,7 +12,8 @@ from output import alternative_asset_return
 import datetime
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
-
+from dotenv import load_dotenv
+load_dotenv()  # Automatically loads variables from the .env file
 import os
 from google.oauth2 import service_account
 from google.cloud import bigquery
