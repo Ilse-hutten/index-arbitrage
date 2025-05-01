@@ -93,7 +93,7 @@ This step evaluates the replication portfolio's performance and the trading stra
 3. Install the required dependencies:
   pip install -r requirements.txt
 4. Run the Streamlit application:
-   streamlit run app.py
+   streamlit run app/app.py
 
 
 
