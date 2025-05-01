@@ -13,17 +13,34 @@ import datetime
 from PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
 
+import os
+from google.oauth2 import service_account
+from google.cloud import bigquery
+
 st.set_page_config(
     page_title="📊 Statistical Arbitrage Strategy 🚀",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
-)
+# Dynamically build credentials from environment variables
+credentials_info = {
+    "type": "service_account",
+    "project_id": os.getenv("PROJECT_ID"),
+    "private_key_id": os.getenv("PRIVATE_KEY_ID"),
+    "private_key": os.getenv("PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("CLIENT_EMAIL"),
+    "client_id": os.getenv("CLIENT_ID"),
+    "auth_uri": os.getenv("AUTH_URI"),
+    "token_uri": os.getenv("TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_CERT_URL"),
+    "client_x509_cert_url": os.getenv("CLIENT_CERT_URL"),
+}
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials)
-URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
+
+URL = "https://index-arbitrage-fqciuj24i2dwjmbgaytvhl.streamlit.app/"
+#URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
 # URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
 
 # Custom CSS for animations & styling
