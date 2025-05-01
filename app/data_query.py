@@ -1,6 +1,8 @@
 import os
 from google.cloud import bigquery
 from google.oauth2 import service_account
+from dotenv import load_dotenv
+load_dotenv()  # Automatically loads variables from the .env file
 
 # Build credentials from environment variables
 credentials_info = {
