@@ -25,14 +25,15 @@ st.set_page_config(
 )
 
 # Build credentials from environment variables
-# Read and process ONCE
+# Read private key from environment variables (set in Railway)
 raw_private_key = os.getenv("private_key")
 
-# Only replace if key looks like it's got literal `\n`
-if raw_private_key and "\\n" in raw_private_key:
+if raw_private_key:
+    # Replace the literal "\n" with actual newlines
     private_key = raw_private_key.replace("\\n", "\n")
 else:
-    private_key = raw_private_key
+    raise ValueError("Missing private key from environment")
+
 
 credentials_info = {
     "type": "service_account",
