@@ -1,12 +1,29 @@
 import os
 from google.cloud import bigquery
+from google.oauth2 import service_account
+
+# Build credentials from environment variables
+credentials_info = {
+    "type": "service_account",
+    "project_id": os.getenv("PROJECT_ID"),
+    "private_key_id": os.getenv("PRIVATE_KEY_ID"),
+    "private_key": os.getenv("PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("CLIENT_EMAIL"),
+    "client_id": os.getenv("CLIENT_ID"),
+    "auth_uri": os.getenv("AUTH_URI"),
+    "token_uri": os.getenv("TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_CERT_URL"),
+    "client_x509_cert_url": os.getenv("CLIENT_CERT_URL"),
+}
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 def fetch_data(dataset: str, table: str):
-
     query = f"SELECT * FROM `lewagon-statistical-arbitrage.{dataset}.{table}` ORDER BY date"
 
-    client = bigquery.Client()  # Initialize BigQuery client
+    # Pass the explicit credentials to BigQuery client
+    client = bigquery.Client(credentials=credentials)
     return client.query(query).to_dataframe()  # Run query and return DataFrame
+
 
 # Fetching functions for specific datasets
 def fetch_NASDAQ100_index():
