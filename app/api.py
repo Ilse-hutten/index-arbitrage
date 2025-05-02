@@ -3,7 +3,7 @@ import json
 from typing import List
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-from data_query import  *
+from data_query import fetch_SP500_index, fetch_SP500_all_components
 import pandas as pd
 from main import compute_bt_result
 app = FastAPI()
@@ -90,7 +90,7 @@ def fetch_btresult_rolling_pca(
             "rep_pf":  json.loads(rep_pf.to_json(orient="records", date_format="iso"))
 
         }
-    
+
     return JSONResponse(content=data)
 
 
