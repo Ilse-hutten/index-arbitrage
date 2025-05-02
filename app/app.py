@@ -1,4 +1,10 @@
 import streamlit as st
+st.set_page_config(
+    page_title="📊 Statistical Arbitrage Strategy 🚀",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -18,41 +24,15 @@ import os
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
-st.set_page_config(
-    page_title="📊 Statistical Arbitrage Strategy 🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
+
+
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
 )
-
-# Build credentials from environment variables
-# Read private key from environment variables (set in Railway)
-raw_private_key = os.getenv("private_key")
-
-if raw_private_key:
-    # Replace the literal "\n" with actual newlines
-    private_key = raw_private_key.replace("\\n", "\n")
-else:
-    raise ValueError("Missing private key from environment")
-
-
-credentials_info = {
-    "type": "service_account",
-    "project_id": os.getenv("project_id"),
-    "private_key_id": os.getenv("private_key_id"),
-    "private_key": private_key,
-    "client_email": os.getenv("client_email"),
-    "client_id": os.getenv("client_id"),
-    "auth_uri": os.getenv("auth_uri"),
-    "token_uri": os.getenv("token_uri"),
-    "auth_provider_x509_cert_url": os.getenv("auth_provider_cert_url"),
-    "client_x509_cert_url": os.getenv("client_cert_url"),
-}
-credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials)
-
-URL = "https://index-arbitrage-fqciuj24i2dwjmbgaytvhl.streamlit.app/"
 #URL = "https://developers-254643980168.europe-west1.run.app/fetch_btresult_rolling_pca"
-# URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
+URL = "http://127.0.0.1:8000/fetch_btresult_rolling_pca"
+
 
 # Custom CSS for animations & styling
 st.markdown("""
@@ -287,51 +267,63 @@ with st.form(key='form_bigquery_selection'):
 
 # ✅ Fetch Data and Process PCA on Submission
 if submitted:
-    # st.write(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json())
+    # 📥 Fetch data from API
+    rep_pf = pd.DataFrame(requests.get(URL, params={
+        "cal_days": 60,
+        "trade_days": 30,
+        "n_stocks": num_stocks,
+        "window": windows,
+        "n_pcs": n_pcs,
+        "index_selected": selected_index
+    }).json()["rep_pf"])
 
-    rep_pf = pd.DataFrame(requests.get(URL, params={"cal_days":60, "trade_days":30,"n_stocks":num_stocks,"window":windows,"n_pcs":n_pcs,"index_selected":selected_index}).json()["rep_pf"])
     st.write(pd.DataFrame(rep_pf))
-    pca_date_str = str(pca_date)  # Convert Streamlit date input to string
-    pca_date = pd.to_datetime(pca_date_str)  # Ensure it's a datetime object
-    rep_pf.set_index('date', inplace=True)
-    rep_pf.index = pd.to_datetime(rep_pf.index)  # Ensure index is in datetime format
-    if pca_date in rep_pf.index:
-        rep_pf_for_date = rep_pf.loc[[pca_date]]  # Get weights for the specific date
 
-        # Filter to only include stocks with weights > 0
+
+    # ✅ Ensure 'date' is datetime and set as index
+    rep_pf['date'] = pd.to_datetime(rep_pf['date'], errors='coerce').dt.date
+    #rep_pf.set_index('date', inplace=True)
+
+    # ✅ Convert selected date to normalized datetime
+    pca_date = pca_date
+
+
+    # 🔍 Filter by selected date
+    if pca_date in rep_pf["date"].values:
+        rep_pf_for_date = rep_pf[rep_pf['date'] == pca_date]
+
+        # Drop the 'date' column before filtering the weights
+        rep_pf_for_date = rep_pf_for_date.drop(columns=["date"])
+
+        # Filter columns where the stock weights are greater than 0
         filtered_rep_pf_for_date = rep_pf_for_date.loc[:, rep_pf_for_date.iloc[0] > 0]
 
-        # Format the date row index to display only the date (no time)
-        filtered_rep_pf_for_date.index = filtered_rep_pf_for_date.index.strftime('%Y-%m-%d')
+        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks.")
+        st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))
 
-        # ✅ Display Results
-        st.success("🎯 PCA Calculation Complete! Below are the weights for the selected stocks for the day you choose.")
-        st.dataframe(filtered_rep_pf_for_date.style.format("{:.4f}"))  # Format DataFrame for clear output
+        # Prepare bar chart
+        df_numeric = filtered_rep_pf_for_date.T.reset_index()
+        df_numeric.columns = ["Stock Symbol", "Stock Value"]
+
+        fig = px.bar(
+            df_numeric,
+            x="Stock Symbol",
+            y="Stock Value",
+            title="Stock Values Bar Chart",
+            color="Stock Value",
+            text="Stock Value"
+        )
+        fig.update_traces(texttemplate='%{text:.4f}', textposition="outside")
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig)
+
     else:
-        st.error(f"🚨 Selected date {pca_date.date()} not found in the PCA weights. Try adjusting the PCA window.")
+        st.error(f"🚨 Selected date {pca_date} not found in the PCA weights. Try adjusting the PCA window.")
 
-    df_numeric = filtered_rep_pf_for_date.drop(columns=["date"], errors="ignore").T
-    df_numeric.columns = ["Stock Value"]  # Rename the column for clarity
-    df_numeric.reset_index(inplace=True)  # Convert index to a column
-    df_numeric.rename(columns={"index": "Stock Symbol"}, inplace=True)
 
-    # Create an interactive bar chart with Plotly
-    fig = px.bar(
-        df_numeric,
-        x="Stock Symbol",
-        y="Stock Value",
-        title="Stock Values Bar Chart",
-        labels={"Stock Value": "Value", "Stock Symbol": "Stock"},
-        color="Stock Value",  # Optional: Color bars based on value
-        text="Stock Value",   # Display values on bars
-    )
 
-    # Update layout for better readability
-    fig.update_traces(texttemplate='%{text:.4f}', textposition="outside")
-    fig.update_layout(xaxis_tickangle=-45)  # Rotate x-axis labels
 
-    # Display the plot in Streamlit
-    st.plotly_chart(fig)
+
 
 
 #     with st.spinner(f"Fetching data for {selected_index} from BigQuery..."):
