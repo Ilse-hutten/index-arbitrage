@@ -85,16 +85,39 @@ This step evaluates the replication portfolio's performance and the trading stra
 
 ## How to Run the Application Locally
 
-1. Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/Ilse-hutten/index-arbitrage
-2. Navigate to the project directory:
-   cd project-directory
-3. Install the required dependencies:
-  pip install -r requirements.txt
-4. Run the Streamlit application:
-   streamlit run app/app.py
+### 1. Clone the Repository
 
+```bash
+git clone https://github.com/Ilse-hutten/index-arbitrage
+cd index-arbitrage
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Start the Backend API (FastAPI with Uvicorn)
+
+In a **new terminal** window:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+> Make sure your FastAPI app is located in `api/main.py` and has the app instance defined as:
+> ```python
+> app = FastAPI()
+> ```
+
+### 4. Run the Streamlit Frontend
+
+In another terminal:
+
+```bash
+streamlit run app/app.py
+```
 
 
 
