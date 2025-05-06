@@ -103,7 +103,7 @@ pip install -r requirements.txt
 In a **new terminal** window:
 
 ```bash
-uvicorn api.main:app --reload
+uvicorn app.api:app --reload 
 ```
 
 > Make sure your FastAPI app is located in `api/main.py` and has the app instance defined as:
