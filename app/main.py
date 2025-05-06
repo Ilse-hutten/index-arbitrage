@@ -1,23 +1,23 @@
 import os
 import pandas as pd
-from frame import Frame
-from testing import z_score_trading
+from app.frame import Frame
+from app.testing import z_score_trading
 from google.cloud import storage
 from google.cloud import bigquery
-from data_query import fetch_NASDAQ100_index
-from data_query import fetch_NASDAQ100_all_components
-from data_query import fetch_SP500_index
-from data_query import fetch_SP500_all_components
-from data_query import fetch_ftse100_index
-from data_query import fetch_ftse100_all_components
-from PCA_function import rolling_pca_weights
-from preprocessing import preprocessing_X
+from app.data_query import fetch_NASDAQ100_index
+from app.data_query import fetch_NASDAQ100_all_components
+from app.data_query import fetch_SP500_index
+from app.data_query import fetch_SP500_all_components
+from app.data_query import fetch_ftse100_index
+from app.data_query import fetch_ftse100_all_components
+from app.PCA_function import rolling_pca_weights
+from app.preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
-from output import alternative_asset_return
+from app.output import alternative_asset_return
 import seaborn as sns
 import math
 from typing import List
-from output import output
+from app.output import output
 from fastapi import FastAPI, Query
 
 #
@@ -113,7 +113,7 @@ def compute_bt_result(
     print('data processed')
     rep_pf = rolling_pca_weights(processed_df, n_stocks, window, n_pcs)
 
-    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days, 
+    bt_result = z_score_trading(rep_pf, underlying_df, target_df, cal_days,
                                 trade_days, thresholds,exit_levels, dynamic)
     print('rec')
     return bt_result,rep_pf
