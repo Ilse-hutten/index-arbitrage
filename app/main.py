@@ -1,23 +1,23 @@
 import os
 import pandas as pd
-from app.frame import Frame
-from app.testing import z_score_trading
+from .frame import Frame
+from .testing import z_score_trading
 from google.cloud import storage
 from google.cloud import bigquery
-from app.data_query import fetch_NASDAQ100_index
-from app.data_query import fetch_NASDAQ100_all_components
-from app.data_query import fetch_SP500_index
-from app.data_query import fetch_SP500_all_components
-from app.data_query import fetch_ftse100_index
-from app.data_query import fetch_ftse100_all_components
-from app.PCA_function import rolling_pca_weights
-from app.preprocessing import preprocessing_X
+from .data_query import fetch_NASDAQ100_index
+from .data_query import fetch_NASDAQ100_all_components
+from .data_query import fetch_SP500_index
+from .data_query import fetch_SP500_all_components
+from .data_query import fetch_ftse100_index
+from .data_query import fetch_ftse100_all_components
+from .PCA_function import rolling_pca_weights
+from .preprocessing import preprocessing_X
 from sklearn.decomposition import PCA
-from app.output import alternative_asset_return
+from .output import alternative_asset_return
 import seaborn as sns
 import math
 from typing import List
-from app.output import output
+from .output import output
 from fastapi import FastAPI, Query
 
 #

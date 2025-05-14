@@ -14,9 +14,9 @@ import time
 import requests
 from google.cloud import bigquery
 from sklearn.decomposition import PCA
-from output import alternative_asset_return
+from .output import alternative_asset_return
 import datetime
-from PCA_function import rolling_pca_weights
+from .PCA_function import rolling_pca_weights
 from google.oauth2 import service_account
 from dotenv import load_dotenv
 load_dotenv()  # Automatically loads variables from the .env file
@@ -565,3 +565,8 @@ if submitted:
 ### dynamics should be true in streamlit
 #### input cal_ days, trade_days, thresholds,
 ####calibration_days = st.number_input("📅 Calibration Days", min_value=30, max_value=60, value=45)
+
+if __name__ == "__main__":
+    # Let Streamlit run this file
+    import streamlit as st
+    st.warning("Please run using: streamlit run run_app.py")
