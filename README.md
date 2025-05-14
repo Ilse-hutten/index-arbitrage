@@ -106,17 +106,13 @@ In a **new terminal** window:
 uvicorn app.api:app --reload 
 ```
 
-> Make sure your FastAPI app is located in `api/main.py` and has the app instance defined as:
-> ```python
-> app = FastAPI()
-> ```
-
 ### 4. Run the Streamlit Frontend
 
 In another terminal:
 
 ```bash
-streamlit run app/app.py
+streamlit run run_app/app.py
+
 ```
 
 
