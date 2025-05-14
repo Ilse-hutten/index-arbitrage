@@ -3,9 +3,9 @@ import json
 from typing import List
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-from data_query import fetch_SP500_index, fetch_SP500_all_components
+from .data_query import fetch_SP500_index, fetch_SP500_all_components
 import pandas as pd
-from main import compute_bt_result
+from .main import compute_bt_result
 app = FastAPI()
 
 

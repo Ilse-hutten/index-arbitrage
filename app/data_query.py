@@ -1,7 +1,7 @@
 import os
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from app.app import credentials
+from .old_app import credentials
 from google.cloud import bigquery
 
 client = bigquery.Client(credentials=credentials)
